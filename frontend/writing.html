@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - Writing Practice</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff", "tertiary": "#784b00", "on-error": "#ffffff",
+            "primary-container": "#2563eb", "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655", "primary": "#004ac6",
+            "secondary": "#006c49", "primary-fixed": "#dbe1ff",
+            "outline": "#737686", "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc", "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff", "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700", "on-surface": "#191c1e",
+            "tertiary-container": "#996100", "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f", "on-background": "#191c1e",
+            "inverse-on-surface": "#eff1f3", "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00", "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133", "error-container": "#ffdad6",
+            "background": "#f7f9fb", "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff", "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd", "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236", "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d", "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb", "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db", "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8", "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a", "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px", "stack-lg": "32px", "stack-sm": "8px",
+            "margin-desktop": "40px", "container-max": "1280px",
+            "margin-mobile": "16px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"],
+            "body-lg": ["Inter"], "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* 计时器 */
+    .timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .timer.warning { color: #b45309; }
+    .timer.critical { color: #ba1a1a; animation: pulse 1s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* 写作输入框 */
+    .essay-editor {
+      min-height: 400px;
+      line-height: 1.8;
+      resize: vertical;
+    }
+
+    /* 范文展示 */
+    .sample-essay {
+      white-space: pre-wrap;
+      line-height: 1.8;
+    }
+
+    /* 提纲项 */
+    .outline-item {
+      cursor: pointer;
+    }
+
+    .outline-item.done {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- 侧边栏导航 -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">CET-6 Prep Mode</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list"></ul>
+    </div>
+
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary hidden md:block">
+          Writing Practice
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-outline">timer</span>
+          <span class="timer text-primary" id="writing-timer">30:00</span>
+        </div>
+        <button class="ai-button ai-button--secondary" onclick="showMyWritings()">
+          <span class="material-symbols-outlined">folder_open</span>
+          <span class="hidden md:inline">My Writings</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto w-full">
+
+      <!-- 任务选择区域 -->
+      <section id="task-selection" class="mb-stack-lg">
+        <h2 class="font-title-md text-title-md text-on-surface mb-stack-md">Choose a Writing Task</h2>
+        <div class="flex flex-wrap gap-2 mb-stack-md" id="level-filter">
+          <button class="ai-button ai-button--text active" data-level="all" onclick="filterTasks('all', this)">All</button>
+          <button class="ai-button ai-button--text" data-level="CET-4" onclick="filterTasks('CET-4', this)">CET-4</button>
+          <button class="ai-button ai-button--text" data-level="CET-6" onclick="filterTasks('CET-6', this)">CET-6</button>
+          <button class="ai-button ai-button--text" data-level="IELTS" onclick="filterTasks('IELTS', this)">IELTS</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter" id="task-list">
+          <!-- 任务卡片通过JS动态生成 -->
+        </div>
+      </section>
+
+      <!-- 写作区域（默认隐藏） -->
+      <section id="writing-area" class="hidden">
+
+        <!-- 返回按钮 -->
+        <div class="mb-stack-md">
+          <button class="ai-button ai-button--text" onclick="backToSelection()">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <span>Back to List</span>
+          </button>
+        </div>
+
+        <!-- 题目要求卡片 -->
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <div class="flex items-start justify-between mb-stack-md">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="ai-badge ai-badge--primary" id="task-level">CET-6</span>
+                <span class="text-label-sm text-outline" id="task-meta">Suggested Words: 150-200</span>
+              </div>
+              <h3 class="font-title-md text-title-md text-on-surface" id="task-title">Task Title</h3>
+            </div>
+          </div>
+          <p class="text-body-md text-on-surface-variant mb-stack-sm" id="task-prompt">Prompt</p>
+          <div class="bg-surface-container rounded-lg p-4">
+            <p class="text-label-sm text-outline mb-1">中文提示</p>
+            <p class="text-body-md text-on-surface" id="task-prompt-cn">中文提示内容</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+          <!-- 左侧：写作区 -->
+          <div class="lg:col-span-2">
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6">
+              <div class="flex items-center justify-between mb-stack-md">
+                <h3 class="font-title-md text-title-md text-on-surface">Your Essay</h3>
+                <div class="flex items-center gap-3">
+                  <span class="text-label-sm text-outline" id="word-count">0 words</span>
+                  <button class="ai-icon-btn" onclick="clearDraft()" title="清空草稿">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              </div>
+              <textarea class="ai-input essay-editor w-full" id="essay-editor"
+                        placeholder="Start writing your essay here... Your draft is saved automatically."></textarea>
+              <div class="flex items-center justify-between mt-stack-md">
+                <span class="text-label-sm text-outline" id="draft-status">Draft not saved yet</span>
+                <button class="ai-button ai-button--primary" onclick="submitEssay()">
+                  <span class="material-symbols-outlined">check</span>
+                  <span>Submit Writing</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 提交反馈（默认隐藏） -->
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6 mt-stack-lg hidden" id="feedback-section">
+              <h3 class="font-title-md text-title-md text-on-surface mb-stack-md">Feedback</h3>
+              <div id="feedback-content"></div>
+              <div class="flex items-center gap-4 mt-stack-md">
+                <button class="ai-button ai-button--primary" onclick="toggleSample()">
+                  <span class="material-symbols-outlined">menu_book</span>
+                  <span id="sample-btn-text">Show Sample Essay</span>
+                </button>
+                <button class="ai-button ai-button--secondary" onclick="backToSelection()">
+                  <span class="material-symbols-outlined">list</span>
+                  <span>Choose Another Task</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右侧：辅助面板 -->
+          <div class="space-y-stack-lg">
+            <!-- 写作提纲 -->
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6">
+              <h3 class="font-title-md text-title-md text-on-surface mb-stack-md">Outline</h3>
+              <ul class="space-y-sm" id="outline-list">
+                <!-- 提纲通过JS动态生成 -->
+              </ul>
+            </div>
+
+            <!-- 常用表达 -->
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6">
+              <h3 class="font-title-md text-title-md text-on-surface mb-stack-md">Useful Phrases</h3>
+              <ul class="space-y-sm" id="phrase-list">
+                <!-- 常用表达通过JS动态生成 -->
+              </ul>
+            </div>
+
+            <!-- 写作提示 -->
+            <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6">
+              <h3 class="font-title-md text-title-md text-on-surface mb-stack-md">Writing Tips</h3>
+              <ul class="space-y-sm" id="tip-list">
+                <!-- 写作提示通过JS动态生成 -->
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- 范文区域（默认隐藏） -->
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mt-stack-lg hidden" id="sample-section">
+          <div class="flex items-center justify-between mb-stack-md">
+            <h3 class="font-title-md text-title-md text-on-surface">Sample Essay</h3>
+            <div class="flex items-center gap-2">
+              <button class="ai-icon-btn" onclick="readSampleAloud()" title="朗读范文">
+                <span class="material-symbols-outlined">volume_up</span>
+              </button>
+              <button class="ai-icon-btn" onclick="stopReading()" title="停止朗读">
+                <span class="material-symbols-outlined">stop</span>
+              </button>
+            </div>
+          </div>
+          <div class="sample-essay text-body-lg text-on-surface max-w-4xl" id="sample-content"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/data/menu-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260830b"></script>
+  <script src="js/data/writing-data.js?v=20260830b"></script>
+
+  <script>
+    // 当前状态
+    let currentTask = null;
+    let timerInterval = null;
+    let timeRemaining = 1800; // 30分钟
+    let currentFilter = 'all';
+    let outlineDone = [];
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+      currentActivePage = 'writing';
+      renderMenu();
+      // 级别筛选默认跟随全局备考模式（主页/侧边栏选择的四级或六级）
+      currentFilter = api.getPrepLevel();
+      document.querySelectorAll('#level-filter [data-level]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.level === currentFilter);
+      });
+      loadTaskList();
+    });
+
+    // 加载任务列表
+    function loadTaskList() {
+      const container = document.getElementById('task-list');
+      const tasks = (currentFilter === 'all'
+        ? writingData.tasks
+        : writingData.tasks.filter(t => t.level === currentFilter)
+      ).slice().sort((a, b) => {
+        // 真题排在模拟题前面；真题组内按考试时间从新到旧
+        const keyOf = t => {
+          const m = /(\d{4})年(\d{1,2})月/.exec(t.exam || '');
+          return t.exam && m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : 0;
+        };
+        return keyOf(b) - keyOf(a) || b.id - a.id;
+      });
+
+      container.innerHTML = tasks.map(task => {
+        // 检查是否有历史成绩
+        const history = api.getRecords('writing');
+        const record = history.find(h => h.taskId === task.id);
+        const statusBadge = record
+          ? '<span class="ai-badge ai-badge--success">Completed</span>'
+          : '';
+        const examBadge = task.exam
+          ? `<span class="ai-badge ai-badge--warning">${task.exam}</span>`
+          : '';
+
+        return `
+        <div class="ai-module-card group bg-surface-container-lowest rounded-xl p-6 border border-outline-variant hover:border-primary shadow-[0px_4px_12px_rgba(0,0,0,0.02)] hover:shadow-[0px_10px_25px_rgba(37,99,235,0.08)] transition-all cursor-pointer min-h-[160px] flex flex-col justify-between"
+             onclick="startTask(${task.id})">
+          <div class="flex justify-between items-start">
+            <div class="p-3 bg-surface-container rounded-lg text-primary group-hover:bg-primary/10 transition-colors">
+              <span class="material-symbols-outlined text-[32px]">edit_note</span>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span class="ai-badge ai-badge--primary">${task.level}</span>
+              ${examBadge}
+              ${statusBadge}
+            </div>
+          </div>
+          <div class="mt-4">
+            <h3 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">${task.title}</h3>
+            <p class="text-body-md text-on-surface-variant mt-1 line-clamp-2">${task.promptCN}</p>
+            <div class="flex items-center gap-3 mt-2 text-label-sm text-outline">
+              <span class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">schedule</span>
+                ${task.timeLimit} min
+              </span>
+              <span class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">subject</span>
+                ${task.suggestedWords} words
+              </span>
+            </div>
+          </div>
+        </div>
+      `;}).join('');
+    }
+
+    // 筛选级别
+    function filterTasks(level, el) {
+      currentFilter = level;
+      document.querySelectorAll('#level-filter .ai-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      if (el) el.classList.add('active');
+      loadTaskList();
+    }
+
+    // 开始写作任务
+    function startTask(id) {
+      currentTask = writingData.tasks.find(t => t.id === id);
+      if (!currentTask) return;
+
+      outlineDone = [];
+
+      // 填充题目信息
+      document.getElementById('task-level').textContent = currentTask.level;
+      document.getElementById('task-meta').textContent =
+        `Suggested Words: ${currentTask.suggestedWords} | Time Limit: ${currentTask.timeLimit} min`;
+      document.getElementById('task-title').textContent = currentTask.title;
+      document.getElementById('task-prompt').textContent = currentTask.prompt;
+      document.getElementById('task-prompt-cn').textContent = currentTask.promptCN;
+
+      // 渲染提纲
+      const outlineList = document.getElementById('outline-list');
+      outlineList.innerHTML = currentTask.outline.map((item, i) => `
+        <li class="outline-item flex items-start gap-2 text-body-md text-on-surface-variant"
+            id="outline-${i}" onclick="toggleOutlineItem(${i})">
+          <span class="material-symbols-outlined text-sm mt-1">radio_button_unchecked</span>
+          <span>${item}</span>
+        </li>
+      `).join('');
+
+      // 渲染常用表达
+      document.getElementById('phrase-list').innerHTML = currentTask.usefulPhrases.map(p => `
+        <li class="text-body-md text-on-surface-variant flex items-start gap-2">
+          <span class="material-symbols-outlined text-sm mt-1 text-secondary">format_quote</span>
+          <span>${p}</span>
+        </li>
+      `).join('');
+
+      // 渲染写作提示
+      document.getElementById('tip-list').innerHTML = currentTask.tips.map(tip => `
+        <li class="text-body-md text-on-surface-variant flex items-start gap-2">
+          <span class="material-symbols-outlined text-sm mt-1 text-tertiary">tips_and_updates</span>
+          <span>${tip}</span>
+        </li>
+      `).join('');
+
+      // 恢复草稿（如果有）
+      const draft = api.getDraft(currentTask.id);
+      const editor = document.getElementById('essay-editor');
+      editor.value = draft;
+      updateWordCount();
+
+      // 重置界面状态
+      document.getElementById('feedback-section').classList.add('hidden');
+      document.getElementById('sample-section').classList.add('hidden');
+      document.getElementById('sample-btn-text').textContent = 'Show Sample Essay';
+      document.getElementById('task-selection').classList.add('hidden');
+      document.getElementById('writing-area').classList.remove('hidden');
+
+      // 启动计时器
+      startTimer();
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 切换提纲完成状态
+    function toggleOutlineItem(index) {
+      const item = document.getElementById(`outline-${index}`);
+      const icon = item.querySelector('.material-symbols-outlined');
+      const i = outlineDone.indexOf(index);
+
+      if (i === -1) {
+        outlineDone.push(index);
+        item.classList.add('done');
+        icon.textContent = 'check_circle';
+      } else {
+        outlineDone.splice(i, 1);
+        item.classList.remove('done');
+        icon.textContent = 'radio_button_unchecked';
+      }
+    }
+
+    // 更新字数统计 + 自动保存草稿
+    function updateWordCount() {
+      const text = document.getElementById('essay-editor').value.trim();
+      const count = text ? text.split(/\s+/).length : 0;
+      document.getElementById('word-count').textContent = `${count} words`;
+
+      // 自动保存（防抖）
+      clearTimeout(updateWordCount._t);
+      updateWordCount._t = setTimeout(() => {
+        if (currentTask) {
+          api.saveDraft(currentTask.id, text);
+          document.getElementById('draft-status').textContent =
+            'Draft saved at ' + new Date().toLocaleTimeString();
+        }
+      }, 800);
+    }
+
+    // 清空草稿
+    function clearDraft() {
+      if (!confirm('确定要清空当前作文吗？此操作不可恢复。')) return;
+      document.getElementById('essay-editor').value = '';
+      updateWordCount();
+      showToast('草稿已清空', 'info');
+    }
+
+    // 提交作文
+    function submitEssay() {
+      const text = document.getElementById('essay-editor').value.trim();
+      const count = text ? text.split(/\s+/).length : 0;
+
+      if (count < 20) {
+        showToast('作文太短了，请至少写 20 个单词再提交！', 'error');
+        return;
+      }
+
+      stopTimer();
+
+      // 字数评估
+      const range = currentTask.suggestedWords; // 如 "150-200"
+      const nums = range.match(/\d+/g).map(Number);
+      const min = Math.min(...nums), max = Math.max(...nums);
+
+      let wordComment, wordClass;
+      if (count < min) {
+        wordComment = `字数偏少（建议 ${min}-${max} 词），可以再展开论述，补充例子或细节。`;
+        wordClass = 'text-tertiary';
+      } else if (count > max * 1.5) {
+        wordComment = `字数偏多（建议 ${min}-${max} 词），考试中注意控制篇幅，避免写不完。`;
+        wordClass = 'text-tertiary';
+      } else {
+        wordComment = `字数合适（${count} 词，建议 ${min}-${max} 词），篇幅控制得很好！`;
+        wordClass = 'text-secondary';
+      }
+
+      // 段落评估
+      const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim()).length;
+
+      // 用时
+      const timeUsed = currentTask.timeLimit * 60 - timeRemaining;
+      const minutes = Math.floor(timeUsed / 60);
+
+      document.getElementById('feedback-content').innerHTML = `
+        <div class="space-y-sm">
+          <p class="text-body-md ${wordClass} flex items-start gap-2">
+            <span class="material-symbols-outlined text-sm mt-1">subject</span>
+            <span>${wordComment}</span>
+          </p>
+          <p class="text-body-md text-on-surface-variant flex items-start gap-2">
+            <span class="material-symbols-outlined text-sm mt-1">segment</span>
+            <span>共分为 ${paragraphs} 个段落${paragraphs >= 3 ? '，结构清晰' : '，建议使用 3 段以上结构（开头-主体-结尾）'}。</span>
+          </p>
+          <p class="text-body-md text-on-surface-variant flex items-start gap-2">
+            <span class="material-symbols-outlined text-sm mt-1">schedule</span>
+            <span>用时 ${minutes} 分钟（限时 ${currentTask.timeLimit} 分钟）${minutes <= currentTask.timeLimit ? '' : '，已超时' }。</span>
+          </p>
+          <p class="text-body-md text-on-surface-variant flex items-start gap-2">
+            <span class="material-symbols-outlined text-sm mt-1">auto_awesome</span>
+            <span>提交后可以查看范文对照学习，点击右上角喇叭可以朗读范文。</span>
+          </p>
+        </div>
+      `;
+      document.getElementById('feedback-section').classList.remove('hidden');
+
+      // 保存记录
+      api.addRecord('writing', {
+        taskId: currentTask.id,
+        title: currentTask.title,
+        wordCount: count,
+        paragraphs,
+        timeUsed,
+        date: new Date().toISOString()
+      });
+
+      // 填充范文内容（供展开显示）
+      document.getElementById('sample-content').textContent = currentTask.sampleEssay;
+
+      loadTaskList(); // 刷新列表上的"已完成"标记
+      showToast('提交成功！点击查看范文对照学习', 'success');
+    }
+
+    // 展开/收起范文
+    function toggleSample() {
+      const section = document.getElementById('sample-section');
+      const btnText = document.getElementById('sample-btn-text');
+      const hidden = section.classList.toggle('hidden');
+      btnText.textContent = hidden ? 'Show Sample Essay' : 'Hide Sample Essay';
+      if (!hidden) {
+        document.getElementById('sample-content').textContent = currentTask.sampleEssay;
+        section.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        stopReading();
+      }
+    }
+
+    // 朗读范文
+    function readSampleAloud() {
+      if (!('speechSynthesis' in window)) {
+        showToast('当前浏览器不支持语音朗读', 'error');
+        return;
+      }
+      stopReading();
+      const u = new SpeechSynthesisUtterance(currentTask.sampleEssay);
+      u.lang = 'en-US';
+      u.rate = 0.95;
+      speechSynthesis.speak(u);
+    }
+
+    function stopReading() {
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+    }
+
+    // 查看我的写作记录
+    function showMyWritings() {
+      const history = api.getRecords('writing');
+      if (history.length === 0) {
+        showToast('还没有写作记录，先完成一篇吧！', 'info');
+        return;
+      }
+      const total = history.length;
+      const avgWords = Math.round(history.reduce((s, h) => s + h.wordCount, 0) / total);
+      showToast(`共完成 ${total} 篇作文，平均 ${avgWords} 词`, 'success');
+    }
+
+    // 返回任务列表
+    function backToSelection() {
+      stopTimer();
+      stopReading();
+      document.getElementById('writing-area').classList.add('hidden');
+      document.getElementById('task-selection').classList.remove('hidden');
+      loadTaskList();
+    }
+
+    // 计时器
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timeRemaining = currentTask.timeLimit * 60;
+
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        const timerEl = document.getElementById('writing-timer');
+        timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        timerEl.classList.remove('warning', 'critical');
+        if (timeRemaining <= 300) {
+          timerEl.classList.add('critical');
+        } else if (timeRemaining <= 600) {
+          timerEl.classList.add('warning');
+        }
+
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          showToast('时间到！建议尽快提交作文。', 'warning');
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    // 监听输入（字数统计 + 自动保存）
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('essay-editor').addEventListener('input', updateWordCount);
+    });
+  </script>
+
+</body>
+</html>

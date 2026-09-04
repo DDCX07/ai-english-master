@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - Settings</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind 配置（与其他页面一致） -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff", "tertiary": "#784b00", "on-error": "#ffffff",
+            "primary-container": "#2563eb", "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655", "primary": "#004ac6",
+            "secondary": "#006c49", "primary-fixed": "#dbe1ff",
+            "outline": "#737686", "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc", "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff", "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700", "on-surface": "#191c20",
+            "tertiary-container": "#996100", "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f", "on-background": "#191c20",
+            "inverse-on-surface": "#eff1f3", "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00", "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133", "error-container": "#ffdad6",
+            "background": "#f7f9fb", "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff", "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd", "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236", "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d", "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb", "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db", "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8", "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a", "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px", "stack-lg": "32px", "stack-sm": "8px",
+            "margin-desktop": "40px", "container-max": "1280px",
+            "margin-mobile": "16px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"],
+            "body-lg": ["Inter"], "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* 选项卡 */
+    .settings-tab {
+      padding: 10px 20px;
+      border-radius: 0.5rem 0.5rem 0 0;
+      border-bottom: 3px solid transparent;
+      color: var(--ai-outline, #737686);
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .settings-tab:hover { color: var(--ai-primary, #004ac6); }
+
+    .settings-tab.active {
+      color: var(--ai-primary, #004ac6);
+      border-bottom-color: var(--ai-primary, #004ac6);
+      background-color: rgba(0, 74, 198, 0.05);
+    }
+
+    /* 开关（纯 CSS 实现，无依赖） */
+    .settings-switch {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      border-radius: 9999px;
+      background-color: var(--ai-outline-variant, #c3c6d7);
+      transition: background-color 0.2s ease;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .settings-switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+      transition: transform 0.2s ease;
+    }
+
+    .settings-switch.on { background-color: var(--ai-secondary, #006c49); }
+    .settings-switch.on::after { transform: translateX(22px); }
+
+    /* 表单分区标题 */
+    .settings-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--ai-on-surface, #191c20);
+    }
+
+    /* 数字输入框收窄 */
+    .settings-number { width: 110px; }
+  </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- 侧边栏导航 -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">CET-6 Prep Mode</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list"></ul>
+    </div>
+
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item ai-menu-item--active" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <button class="ai-button ai-button--text" onclick="window.location.href='index.html'">
+          <span class="material-symbols-outlined">arrow_back</span>
+          <span>返回主页</span>
+        </button>
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary hidden md:block">
+          设置
+        </h2>
+      </div>
+    </header>
+
+    <!-- 主要内容：居中，最大宽度 800px -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg mx-auto w-full max-w-[800px]">
+
+      <!-- 选项卡按钮组 -->
+      <div class="flex items-end gap-2 border-b border-outline-variant mb-stack-lg overflow-x-auto">
+        <button class="settings-tab active" data-tab="profile" onclick="switchTab('profile', this)">
+          <span class="material-symbols-outlined align-middle mr-1" style="font-size:20px;">person</span>个人资料
+        </button>
+        <button class="settings-tab" data-tab="preferences" onclick="switchTab('preferences', this)">
+          <span class="material-symbols-outlined align-middle mr-1" style="font-size:20px;">tune</span>学习偏好
+        </button>
+        <button class="settings-tab" data-tab="goals" onclick="switchTab('goals', this)">
+          <span class="material-symbols-outlined align-middle mr-1" style="font-size:20px;">flag</span>目标与进度
+        </button>
+        <button class="settings-tab" data-tab="about" onclick="switchTab('about', this)">
+          <span class="material-symbols-outlined align-middle mr-1" style="font-size:20px;">info</span>关于
+        </button>
+      </div>
+
+      <!-- ============ ① 个人资料 ============ -->
+      <section id="tab-profile" class="settings-panel">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md">
+            <span class="material-symbols-outlined text-primary">account_circle</span>当前账号
+          </h3>
+          <div class="flex items-center gap-4">
+            <div id="profile-avatar" class="ai-avatar"
+                 style="display:flex;align-items:center;justify-content:center;background:#004ac6;color:#fff;font-weight:700;width:56px;height:56px;font-size:24px;">?</div>
+            <div class="min-w-0">
+              <p id="profile-username" class="font-title-md text-title-md text-on-surface truncate">未登录</p>
+              <p class="font-label-sm text-label-sm text-outline mt-1">绑定账号：<span id="profile-bound">—（本地模式）</span></p>
+              <p class="font-label-sm text-label-sm text-outline mt-1">注册时间：<span id="profile-created">—</span></p>
+            </div>
+          </div>
+          <p class="text-label-sm text-outline mt-4">未登录时所有数据只保存在本机，登录后可同步到账号。</p>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md">
+            <span class="material-symbols-outlined text-primary">edit</span>修改昵称
+          </h3>
+          <div class="flex flex-wrap items-end gap-stack-md">
+            <label class="flex flex-col gap-2 flex-1 min-w-[220px]">
+              <span class="font-label-sm text-label-sm text-outline">昵称（2-20 位字母、数字、下划线或中文）</span>
+              <input id="nickname-input" class="ai-input" maxlength="20" placeholder="输入新昵称"/>
+            </label>
+            <button class="ai-button ai-button--primary" onclick="saveNickname()">
+              <span class="material-symbols-outlined">save</span><span>保存</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md">
+            <span class="material-symbols-outlined text-primary">lock</span>修改密码
+          </h3>
+          <div class="flex flex-col gap-stack-md">
+            <label class="flex flex-col gap-2">
+              <span class="font-label-sm text-label-sm text-outline">旧密码</span>
+              <input id="old-password" type="password" class="ai-input" maxlength="64" autocomplete="current-password"/>
+            </label>
+            <label class="flex flex-col gap-2">
+              <span class="font-label-sm text-label-sm text-outline">新密码（8-64 位，同时包含字母和数字）</span>
+              <input id="new-password" type="password" class="ai-input" maxlength="64" autocomplete="new-password"/>
+            </label>
+            <label class="flex flex-col gap-2">
+              <span class="font-label-sm text-label-sm text-outline">确认新密码</span>
+              <input id="confirm-password" type="password" class="ai-input" maxlength="64" autocomplete="new-password"/>
+            </label>
+            <div class="flex justify-end">
+              <button class="ai-button ai-button--primary" onclick="savePassword()">
+                <span class="material-symbols-outlined">vpn_key</span><span>修改密码</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ ② 学习偏好 ============ -->
+      <section id="tab-preferences" class="settings-panel hidden">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <h3 class="settings-section-title font-title-md text-title-md mb-2">
+            <span class="material-symbols-outlined text-primary">flag</span>备考目标
+          </h3>
+          <p class="text-body-md text-on-surface-variant mb-stack-md">切换后阅读、写作、翻译等模块的全局筛选立即更新。</p>
+          <div class="flex items-center gap-2">
+            <button class="ai-button ai-button--secondary px-6" id="pref-btn-cet4" onclick="choosePrepLevel('CET-4')">备考四级 CET-4</button>
+            <button class="ai-button ai-button--primary px-6" id="pref-btn-cet6" onclick="choosePrepLevel('CET-6')">备考六级 CET-6</button>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md">
+            <span class="material-symbols-outlined text-primary">notifications</span>每日学习提醒
+          </h3>
+          <div class="flex items-center justify-between mb-stack-md">
+            <div>
+              <p class="text-body-md text-on-surface">开启提醒</p>
+              <p class="text-label-sm text-outline mt-1">页面打开时到点弹窗提醒（本地实现，无需联网）</p>
+            </div>
+            <div class="settings-switch" id="switch-reminder" onclick="toggleSwitch('reminder')"></div>
+          </div>
+          <label class="flex flex-col gap-2">
+            <span class="font-label-sm text-label-sm text-outline">提醒时间</span>
+            <select id="reminder-time" class="ai-input" style="max-width:200px;">
+              <option value="08:00">08:00 早上</option>
+              <option value="12:30">12:30 午间</option>
+              <option value="20:00">20:00 晚上</option>
+              <option value="21:30">21:30 睡前</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md">
+            <span class="material-symbols-outlined text-primary">format_size</span>字体大小
+          </h3>
+          <div class="flex flex-wrap items-end gap-stack-md">
+            <label class="flex flex-col gap-2">
+              <span class="font-label-sm text-label-sm text-outline">全局字号（影响所有页面）</span>
+              <select id="font-size" class="ai-input" style="min-width:160px;" onchange="applyFontSize(this.value, true)">
+                <option value="small">小</option>
+                <option value="medium">中（默认）</option>
+                <option value="large">大</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md">
+            <span class="material-symbols-outlined text-primary">dark_mode</span>夜间模式
+          </h3>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-body-md text-on-surface">深色界面</p>
+              <p class="text-label-sm text-outline mt-1">开启后全站使用深色主题，偏好会保存</p>
+            </div>
+            <div class="settings-switch" id="switch-darkmode" onclick="toggleSwitch('darkmode')"></div>
+          </div>
+        </div>
+
+        <div class="flex justify-end mt-stack-lg">
+          <button class="ai-button ai-button--primary" onclick="savePreferences()">
+            <span class="material-symbols-outlined">save</span><span>保存设置</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ============ ③ 目标与进度 ============ -->
+      <section id="tab-goals" class="settings-panel hidden">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md">
+            <span class="material-symbols-outlined text-primary">target</span>每日目标
+          </h3>
+          <div class="flex flex-col gap-stack-md">
+            <label class="flex items-center justify-between gap-4">
+              <span class="text-body-md text-on-surface">每日新单词（个）</span>
+              <input id="goal-words" type="number" min="5" max="200" class="ai-input settings-number" value="20"/>
+            </label>
+            <label class="flex items-center justify-between gap-4">
+              <span class="text-body-md text-on-surface">听力练习时长（分钟）</span>
+              <input id="goal-listening" type="number" min="0" max="240" class="ai-input settings-number" value="15"/>
+            </label>
+            <label class="flex items-center justify-between gap-4">
+              <span class="text-body-md text-on-surface">阅读练习时长（分钟）</span>
+              <input id="goal-reading" type="number" min="0" max="240" class="ai-input settings-number" value="15"/>
+            </label>
+            <label class="flex items-center justify-between gap-4">
+              <span class="text-body-md text-on-surface">写作练习时长（分钟）</span>
+              <input id="goal-writing" type="number" min="0" max="240" class="ai-input settings-number" value="10"/>
+            </label>
+            <label class="flex items-center justify-between gap-4">
+              <span class="text-body-md text-on-surface">口语练习时长（分钟）</span>
+              <input id="goal-oral" type="number" min="0" max="240" class="ai-input settings-number" value="10"/>
+            </label>
+          </div>
+          <div class="flex justify-end mt-stack-lg">
+            <button class="ai-button ai-button--primary" onclick="saveGoals()">
+              <span class="material-symbols-outlined">save</span><span>保存设置</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md">
+            <span class="material-symbols-outlined text-primary">schedule</span>本周学习时长
+          </h3>
+          <p class="font-headline-lg text-headline-lg text-primary" id="week-hours">0 小时</p>
+          <p class="text-label-sm text-outline mt-2" id="week-detail">由阅读 / 模拟测试等模块记录的做题用时累计</p>
+        </div>
+      </section>
+
+      <!-- ============ ④ 关于 ============ -->
+      <section id="tab-about" class="settings-panel hidden">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md">
+            <span class="material-symbols-outlined text-primary">apps</span>应用信息
+          </h3>
+          <div class="flex flex-col gap-2 text-body-md">
+            <div class="flex justify-between"><span class="text-on-surface-variant">应用名称</span><span class="text-on-surface font-semibold">AI English Master</span></div>
+            <div class="flex justify-between"><span class="text-on-surface-variant">版本号</span><span class="text-on-surface font-semibold">v2.0</span></div>
+            <div class="flex justify-between"><span class="text-on-surface-variant">数据存储</span><span class="text-on-surface font-semibold">本地优先（localStorage）+ 账号同步</span></div>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md">
+            <span class="material-symbols-outlined text-primary">insights</span>数据统计
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+            <div class="text-center p-4 bg-surface-container-low rounded-lg">
+              <p class="font-headline-lg text-headline-lg text-primary" id="stat-days-registered">—</p>
+              <p class="text-label-sm text-outline mt-1">已注册天数</p>
+            </div>
+            <div class="text-center p-4 bg-surface-container-low rounded-lg">
+              <p class="font-headline-lg text-headline-lg text-secondary" id="stat-study-days">0</p>
+              <p class="text-label-sm text-outline mt-1">累计学习天数</p>
+            </div>
+            <div class="text-center p-4 bg-surface-container-low rounded-lg">
+              <p class="font-headline-lg text-headline-lg text-tertiary" id="stat-total-hours">0 小时</p>
+              <p class="text-label-sm text-outline mt-1">总学习时长</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest rounded-xl border border-error/40 shadow-sm p-8">
+          <h3 class="settings-section-title font-title-md text-title-md mb-stack-md" style="color:var(--ai-error,#ba1a1a);">
+            <span class="material-symbols-outlined" style="color:var(--ai-error,#ba1a1a);">warning</span>危险操作
+          </h3>
+          <p class="text-body-md text-on-surface-variant mb-stack-md">
+            清空本机所有学习数据（词汇进度、练习记录、写作草稿、打卡）。此操作不可恢复，已同步到账号的数据不受影响。
+          </p>
+          <button class="ai-button ai-button--full" style="background:var(--ai-error,#ba1a1a);color:#fff;" onclick="confirmClearAll()">
+            <span class="material-symbols-outlined">delete_forever</span><span>清空所有学习数据</span>
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/data/menu-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260830b"></script>
+
+  <script>
+    // ============ 设置读写：统一存 userSettings（JSON 对象） ============
+
+    const SETTINGS_KEY = 'userSettings';
+    const DEFAULT_SETTINGS = {
+      dailyReminder: false,
+      reminderTime: '20:00',
+      fontSize: 'medium',        // small / medium / large
+      darkMode: false,
+      dailyWordGoal: 20,
+      dailyMinutes: { listening: 15, reading: 15, writing: 10, oral: 10 }
+    };
+
+    function loadSettings() {
+      const saved = storage.get(SETTINGS_KEY, {}) || {};
+      // 浅合并 + 深合并 dailyMinutes，保证新增字段有默认值
+      const merged = Object.assign({}, DEFAULT_SETTINGS, saved);
+      merged.dailyMinutes = Object.assign({}, DEFAULT_SETTINGS.dailyMinutes, saved.dailyMinutes || {});
+      return merged;
+    }
+
+    function saveSettings(patch) {
+      const next = Object.assign(loadSettings(), patch);
+      storage.set(SETTINGS_KEY, next);
+      api.syncSettings();   // 登录后异步同步到云端 user_settings 表
+      return next;
+    }
+
+    // ============ 选项卡切换 ============
+
+    function switchTab(tab, el) {
+      document.querySelectorAll('.settings-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById('tab-' + tab).classList.remove('hidden');
+      document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+      if (el) el.classList.add('active');
+    }
+
+    // 支持 setting.html#goals 这类锚点直达选项卡（Dashboard 今日任务的编辑键会跳过来）
+    (function openTabFromHash() {
+      const tab = (location.hash || '').replace('#', '');
+      if (['profile', 'preferences', 'goals', 'about'].includes(tab)) {
+        switchTab(tab, document.querySelector('.settings-tab[data-tab="' + tab + '"]'));
+      }
+    })();
+
+    // ============ ① 个人资料 ============
+
+    /** 脱敏显示 */
+    function maskAccount(v) {
+      if (!v) return null;
+      if (v.indexOf('@') > 0) {
+        const [name, domain] = v.split('@');
+        return name.slice(0, 1) + '***@' + domain;
+      }
+      if (/^1\d{10}$/.test(v)) return v.slice(0, 3) + '****' + v.slice(-4);
+      return v;
+    }
+
+    function renderProfile() {
+      const user = auth.user();
+      const avatar = document.getElementById('profile-avatar');
+      if (user) {
+        avatar.textContent = (user.username || '?').charAt(0).toUpperCase();
+        document.getElementById('profile-username').textContent = user.username;
+        document.getElementById('profile-bound').textContent =
+          maskAccount(user.email || user.phone || user.username) + '（已登录）';
+        document.getElementById('nickname-input').value = user.username || '';
+        // 注册时间从 profiles 表取
+        if (sb) {
+          sb.from('profiles').select('created_at').eq('id', user.id).single().then(({ data }) => {
+            if (data) {
+              document.getElementById('profile-created').textContent =
+                (data.created_at || '').slice(0, 10) || '—';
+            }
+          });
+        }
+      } else {
+        avatar.textContent = '游';
+        document.getElementById('profile-username').textContent = '本地模式（未登录）';
+      }
+    }
+
+    async function saveNickname() {
+      const nickname = document.getElementById('nickname-input').value.trim();
+      if (!/^[a-zA-Z0-9_一-龥]{2,20}$/.test(nickname)) {
+        showToast('昵称需为 2-20 位字母、数字、下划线或中文', 'error');
+        return;
+      }
+      if (auth.isLoggedIn()) {
+        const res = await auth.updateNickname(nickname);
+        if (res.success) {
+          renderProfile();
+          showToast('昵称已更新 ✓', 'success');
+        } else {
+          showToast(res.message || '修改失败', 'error');
+        }
+      } else {
+        saveSettings({ localNickname: nickname });
+        showToast('未登录：昵称已保存在本机', 'info');
+      }
+    }
+
+    async function savePassword() {
+      const oldPwd = document.getElementById('old-password').value;
+      const newPwd = document.getElementById('new-password').value;
+      const confirmPwd = document.getElementById('confirm-password').value;
+
+      if (newPwd.length < 8 || !/[a-zA-Z]/.test(newPwd) || !/[0-9]/.test(newPwd)) {
+        showToast('新密码需为 8-64 位，且同时包含字母和数字', 'error');
+        return;
+      }
+      if (newPwd !== confirmPwd) {
+        showToast('两次输入的新密码不一致', 'error');
+        return;
+      }
+
+      if (auth.isLoggedIn()) {
+        const res = await auth.changePassword(oldPwd, newPwd);
+        if (res.success) {
+          ['old-password', 'new-password', 'confirm-password'].forEach(id =>
+            document.getElementById(id).value = '');
+          showToast('密码已修改，下次登录使用新密码 ✓', 'success');
+        } else {
+          showToast(res.message || '修改失败', 'error');
+        }
+      } else {
+        // 本地模式没有密码体系，仅做格式校验
+        ['old-password', 'new-password', 'confirm-password'].forEach(id =>
+          document.getElementById(id).value = '');
+        showToast('本地模式不存储密码：格式校验通过', 'info');
+      }
+    }
+
+    // ============ ② 学习偏好 ============
+
+    function refreshPrepButtons() {
+      const level = api.getPrepLevel();
+      document.getElementById('pref-btn-cet4').className =
+        'ai-button px-6 ' + (level === 'CET-4' ? 'ai-button--primary' : 'ai-button--secondary');
+      document.getElementById('pref-btn-cet6').className =
+        'ai-button px-6 ' + (level === 'CET-6' ? 'ai-button--primary' : 'ai-button--secondary');
+    }
+
+    function choosePrepLevel(level) {
+      api.setPrepLevel(level);   // 触发 prep-level-change，其他页面/侧边栏同步刷新
+      saveSettings({});          // 备考目标本身存独立键 prepLevel；这里同步刷一次 userSettings
+      refreshPrepButtons();
+      showToast('已切换到' + (level === 'CET-6' ? '六级' : '四级') + '备考模式', 'success');
+    }
+
+    /** 开关类：即时生效 + 即时保存 */
+    function toggleSwitch(name) {
+      const el = document.getElementById('switch-' + name);
+      const on = !el.classList.contains('on');
+      el.classList.toggle('on', on);
+
+      if (name === 'darkmode') {
+        applyDarkMode(on);
+        saveSettings({ darkMode: on });
+        showToast(on ? '夜间模式已开启' : '夜间模式已关闭', 'info');
+      } else if (name === 'reminder') {
+        saveSettings({ dailyReminder: on });
+        showToast(on ? '每日提醒已开启' : '每日提醒已关闭', 'info');
+      }
+    }
+
+    function applyDarkMode(on) {
+      document.documentElement.classList.toggle('dark-mode', on);
+      document.documentElement.classList.toggle('dark', on);   // Tailwind dark: 变体
+    }
+
+    const FONT_SIZES = { small: '14px', medium: '16px', large: '18px' };
+
+    function applyFontSize(size, notify) {
+      document.documentElement.style.fontSize = FONT_SIZES[size] || FONT_SIZES.medium;
+      if (notify) {
+        saveSettings({ fontSize: size });
+        showToast('字号已调整为「' + { small: '小', medium: '中', large: '大' }[size] + '」', 'info');
+      }
+    }
+
+    /** 保存学习偏好（提醒时间等非即时项） */
+    function savePreferences() {
+      saveSettings({ reminderTime: document.getElementById('reminder-time').value });
+      showToast('学习偏好已保存 ✓', 'success');
+    }
+
+    // ============ ③ 目标与进度 ============
+
+    function saveGoals() {
+      const num = (id, min, max, fallback) => {
+        const v = parseInt(document.getElementById(id).value, 10);
+        return isNaN(v) ? fallback : Math.min(max, Math.max(min, v));
+      };
+      saveSettings({
+        dailyWordGoal: num('goal-words', 5, 200, 20),
+        dailyMinutes: {
+          listening: num('goal-listening', 0, 240, 15),
+          reading: num('goal-reading', 0, 240, 15),
+          writing: num('goal-writing', 0, 240, 10),
+          oral: num('goal-oral', 0, 240, 10)
+        }
+      });
+      showToast('每日目标已保存 ✓', 'success');
+    }
+
+    /** 从学习记录统计学习时长（秒）：有 timeUsed 的记录直接累计 */
+    function collectStudySeconds(sinceDate) {
+      let seconds = 0;
+      ['readingHistory', 'mockExamHistory', 'listeningHistory',
+       'writingHistory', 'translationHistory', 'oralHistory'].forEach(key => {
+        (storage.get(key, []) || []).forEach(r => {
+          if (sinceDate && r.date && r.date.slice(0, 10) < sinceDate) return;
+          if (typeof r.timeUsed === 'number') seconds += r.timeUsed;
+        });
+      });
+      return seconds;
+    }
+
+    function fmtHours(seconds) {
+      const h = seconds / 3600;
+      return (h >= 10 || h === 0) ? Math.round(h) + ' 小时' : h.toFixed(1) + ' 小时';
+    }
+
+    function renderGoalsStats() {
+      // 本周（最近 7 天）
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+      document.getElementById('week-hours').textContent = fmtHours(collectStudySeconds(weekAgo));
+
+      // 关于页统计
+      const studyDays = storage.get('studyDays', []) || [];
+      document.getElementById('stat-study-days').textContent = studyDays.length;
+      document.getElementById('stat-total-hours').textContent = fmtHours(collectStudySeconds());
+
+      const user = auth.user();
+      if (user && sb) {
+        sb.from('profiles').select('created_at').eq('id', user.id).single().then(({ data }) => {
+          if (data && data.created_at) {
+            const days = Math.max(1, Math.ceil(
+              (Date.now() - new Date(data.created_at)) / 86400000));
+            document.getElementById('stat-days-registered').textContent = days;
+          }
+        });
+      }
+    }
+
+    // ============ ④ 清空数据（二次确认） ============
+
+    let clearConfirmTimer = null;
+
+    function confirmClearAll() {
+      // 二次确认：第一次点击变红倒数，5 秒内再点一次才真正清空
+      const btn = event.currentTarget;
+      if (!btn.dataset.armed) {
+        btn.dataset.armed = '1';
+        btn.lastChild.textContent = '再点一次确认清空（5 秒内）';
+        clearConfirmTimer = setTimeout(() => {
+          delete btn.dataset.armed;
+          btn.lastChild.textContent = '清空所有学习数据';
+        }, 5000);
+        return;
+      }
+      clearTimeout(clearConfirmTimer);
+
+      // 保留：账号信息、userSettings（设置本身）、Supabase 登录会话（sb- 开头的键）
+      const KEEP = ['authUser', 'userSettings', 'prepLevel', 'lastCheckinSync', 'pendingCloudSync'];
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+      keys.forEach(k => {
+        if (!KEEP.includes(k) && k.indexOf('sb-') !== 0) localStorage.removeItem(k);
+      });
+
+      showToast('本机学习数据已清空，即将刷新…', 'success');
+      setTimeout(() => location.reload(), 1200);
+    }
+
+    // ============ 每日提醒（页面打开时检查） ============
+
+    function checkDailyReminder() {
+      const s = loadSettings();
+      if (!s.dailyReminder) return;
+      const now = new Date();
+      const nowHM = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      const today = now.toISOString().slice(0, 10);
+      const lastFired = storage.get('lastReminderFired', '');
+      if (nowHM >= s.reminderTime && lastFired !== today) {
+        storage.set('lastReminderFired', today);
+        setTimeout(() => {
+          showToast('⏰ 学习提醒：该练英语啦！今日目标 ' + s.dailyWordGoal + ' 个单词', 'info');
+        }, 1500);
+      }
+    }
+
+    // ============ 页面初始化 ============
+
+    document.addEventListener('DOMContentLoaded', function () {
+      currentActivePage = 'settings';
+      renderMenu();
+
+      const s = loadSettings();
+
+      // ① 个人资料
+      renderProfile();
+
+      // ② 学习偏好
+      refreshPrepButtons();
+      document.getElementById('switch-reminder').classList.toggle('on', s.dailyReminder);
+      document.getElementById('reminder-time').value = s.reminderTime;
+      document.getElementById('font-size').value = s.fontSize;
+      document.getElementById('switch-darkmode').classList.toggle('on', s.darkMode);
+      applyDarkMode(s.darkMode);
+      applyFontSize(s.fontSize);
+
+      // ③ 目标
+      document.getElementById('goal-words').value = s.dailyWordGoal;
+      document.getElementById('goal-listening').value = s.dailyMinutes.listening;
+      document.getElementById('goal-reading').value = s.dailyMinutes.reading;
+      document.getElementById('goal-writing').value = s.dailyMinutes.writing;
+      document.getElementById('goal-oral').value = s.dailyMinutes.oral;
+      renderGoalsStats();
+
+      // 提醒检查
+      checkDailyReminder();
+    });
+  </script>
+
+</body>
+</html>

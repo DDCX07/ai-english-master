@@ -1,0 +1,101 @@
+<!--
+  卡片组件集合 (Card Components)
+  包含多种常用的卡片样式
+-->
+
+<!-- ============================================================
+  类型1: 统计卡片 (Stat Card)
+  用途: 显示数字统计，如学习天数、单词数等
+  ============================================================ -->
+<div class="ai-stat-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm hover:border-primary transition-colors">
+  <!-- 标题区域 -->
+  <div class="flex items-center gap-3 mb-2">
+    <div class="p-2 bg-primary/10 rounded-lg text-primary">
+      <span class="material-symbols-outlined ai-stat-icon" style="font-variation-settings: 'FILL' 1;">
+        local_fire_department
+      </span>
+    </div>
+    <h3 class="font-title-md text-title-md text-on-surface-variant ai-stat-title">
+      Today's Streak
+    </h3>
+  </div>
+
+  <!-- 数字区域 -->
+  <div class="flex items-baseline gap-2">
+    <span class="font-headline-lg text-headline-lg text-on-surface font-black ai-stat-value">14</span>
+    <span class="font-label-sm text-label-sm text-outline ai-stat-unit">DAYS</span>
+  </div>
+
+  <!-- 进度条 -->
+  <div class="mt-4">
+    <div class="ai-progress-bar">
+      <div class="ai-progress-bar__fill ai-progress-bar__fill--tertiary" style="width: 70%;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+  类型2: 功能模块卡片 (Module Card)
+  用途: 显示学习功能模块，如听力、阅读等
+  ============================================================ -->
+<div class="ai-module-card group bg-surface-container-lowest rounded-xl p-6 border border-outline-variant hover:border-primary shadow-[0px_4px_12px_rgba(0,0,0,0.02)] hover:shadow-[0px_10px_25px_rgba(37,99,235,0.08)] transition-all cursor-pointer min-h-[160px] flex flex-col justify-between">
+  <!-- 顶部：图标和标签 -->
+  <div class="flex justify-between items-start">
+    <div class="p-3 bg-surface-container rounded-lg text-primary group-hover:bg-primary/10 transition-colors">
+      <span class="material-symbols-outlined text-[32px] ai-module-icon">headset</span>
+    </div>
+    <span class="text-label-sm font-label-sm text-outline px-2 py-1 bg-surface-container-low rounded ai-module-tag">
+      听力训练
+    </span>
+  </div>
+
+  <!-- 底部：标题和描述 -->
+  <div class="mt-4">
+    <h3 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors ai-module-title">
+      Listening Practice
+    </h3>
+    <p class="text-body-md text-on-surface-variant mt-1 line-clamp-2 ai-module-desc">
+      Daily dictation and comprehension exercises.
+    </p>
+  </div>
+</div>
+
+<!-- ============================================================
+  类型3: 任务列表卡片 (Task List Card)
+  用途: 显示今日任务列表
+  ============================================================ -->
+<div class="ai-task-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+  <div class="flex items-center justify-between mb-stack-md">
+    <h3 class="font-title-md text-title-md text-on-surface ai-task-title">Today's Tasks</h3>
+    <span class="text-label-sm text-outline ai-task-count">3/5 completed</span>
+  </div>
+
+  <ul class="flex flex-col gap-stack-sm" id="ai-task-list">
+    <!-- 任务项会通过JS动态生成 -->
+    <li class="ai-task-item">
+      <label class="flex items-center gap-3 cursor-pointer">
+        <input type="checkbox" class="ai-checkbox" checked/>
+        <span class="text-body-md text-on-surface">背30个新单词</span>
+      </label>
+    </li>
+  </ul>
+</div>
+
+<!-- ============================================================
+  类型4: 进度概览卡片 (Progress Overview Card)
+  用途: 显示学习进度图表
+  ============================================================ -->
+<div class="ai-progress-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+  <h3 class="font-title-md text-title-md text-on-surface mb-stack-md ai-progress-title">
+    Weekly Progress
+  </h3>
+
+  <!-- 简单的柱状图 -->
+  <div class="flex items-end justify-between h-32 gap-2" id="ai-progress-chart">
+    <!-- 柱状图会通过JS动态生成 -->
+    <div class="flex-1 flex flex-col items-center gap-1">
+      <div class="w-full bg-primary/20 rounded-t" style="height: 60%;"></div>
+      <span class="text-label-sm text-outline">Mon</span>
+    </div>
+  </div>
+</div>

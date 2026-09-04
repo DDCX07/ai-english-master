@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - Listening Practice</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff", "tertiary": "#784b00", "on-error": "#ffffff",
+            "primary-container": "#2563eb", "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655", "primary": "#004ac6",
+            "secondary": "#006c49", "primary-fixed": "#dbe1ff",
+            "outline": "#737686", "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc", "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff", "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700", "on-surface": "#191c1e",
+            "tertiary-container": "#996100", "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f", "on-background": "#191c1e",
+            "inverse-on-surface": "#eff1f3", "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00", "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133", "error-container": "#ffdad6",
+            "background": "#f7f9fb", "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff", "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd", "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236", "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d", "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb", "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db", "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8", "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a", "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px", "stack-lg": "32px", "stack-sm": "8px",
+            "margin-desktop": "40px", "container-max": "1280px",
+            "margin-mobile": "16px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"],
+            "body-lg": ["Inter"], "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* 音频播放器样式 */
+    .audio-player {
+      background: linear-gradient(135deg, var(--ai-primary, #004ac6) 0%, #003ea8 100%);
+    }
+
+    /* 波形动画 */
+    .wave-animation {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 40px;
+    }
+
+    .wave-bar {
+      width: 4px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 2px;
+      animation: wave 1s ease-in-out infinite;
+    }
+
+    .wave-bar:nth-child(1) { animation-delay: 0s; height: 20%; }
+    .wave-bar:nth-child(2) { animation-delay: 0.1s; height: 60%; }
+    .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 100%; }
+    .wave-bar:nth-child(4) { animation-delay: 0.3s; height: 60%; }
+    .wave-bar:nth-child(5) { animation-delay: 0.4s; height: 20%; }
+
+    @keyframes wave {
+      0%, 100% { transform: scaleY(0.5); }
+      50% { transform: scaleY(1); }
+    }
+
+    .wave-animation.paused .wave-bar {
+      animation: none;
+      height: 20%;
+    }
+
+    /* 听力原文样式 */
+    .transcript-text {
+      line-height: 1.8;
+    }
+
+    .transcript-text p {
+      margin-bottom: 1rem;
+      text-indent: 2em;
+    }
+
+    /* 选项样式 */
+    .quiz-option {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .quiz-option:hover {
+      border-color: var(--ai-primary, #004ac6);
+      background-color: rgba(0, 74, 198, 0.05);
+    }
+
+    .quiz-option.selected {
+      border-color: var(--ai-primary, #004ac6);
+      background-color: rgba(0, 74, 198, 0.1);
+    }
+
+    .quiz-option.correct {
+      border-color: var(--ai-secondary, #006c49);
+      background-color: rgba(0, 108, 73, 0.1);
+    }
+
+    .quiz-option.incorrect {
+      border-color: var(--ai-error, #ba1a1a);
+      background-color: rgba(186, 26, 26, 0.1);
+    }
+
+    /* 进度滑块样式 */
+    .progress-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.3);
+      outline: none;
+    }
+
+    .progress-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .progress-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: white;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    /* 速度控制器 */
+    .speed-btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border-radius: 0.25rem;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .speed-btn:hover, .speed-btn.active {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* 关键词高亮 */
+    .keyword {
+      background-color: rgba(0, 74, 198, 0.15);
+      padding: 0.1em 0.3em;
+      border-radius: 0.25rem;
+      font-weight: 500;
+    }
+
+    /* TTS 朗读模式：当前朗读句高亮 */
+    .tts-sentence {
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 0 2px;
+      transition: background-color 0.2s ease;
+    }
+
+    .tts-sentence:hover {
+      background-color: rgba(0, 74, 198, 0.08);
+    }
+
+    .tts-sentence.speaking {
+      background-color: rgba(255, 185, 95, 0.5);
+      box-shadow: 0 0 0 2px rgba(255, 185, 95, 0.5);
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- 侧边栏导航 -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">CET-6 Prep Mode</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list"></ul>
+    </div>
+
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary hidden md:block">
+          Listening Practice
+        </h2>
+        <nav class="hidden lg:flex gap-6">
+          <a class="ai-nav-item ai-nav-item--active" href="#" onclick="filterByType('all', this); return false;">全部</a>
+          <a class="ai-nav-item" href="#" onclick="filterByType('CET-6', this); return false;">六级真题</a>
+          <a class="ai-nav-item" href="#" onclick="filterByType('CET-4', this); return false;">四级真题</a>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-outline">headset</span>
+          <span class="text-label-sm text-outline" id="listening-progress">0/10</span>
+        </div>
+        <button class="ai-button ai-button--secondary" onclick="showStats()">
+          <span class="material-symbols-outlined">bar_chart</span>
+          <span class="hidden md:inline">Stats</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto w-full">
+
+      <!-- 统计概览区域 -->
+      <section class="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-stack-lg">
+        <div class="ai-stat-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="p-2 bg-primary/10 rounded-lg text-primary">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">headset</span>
+            </div>
+            <h3 class="font-title-md text-title-md text-on-surface-variant">Total Completed</h3>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="font-headline-lg text-headline-lg text-on-surface font-black" id="total-completed">0</span>
+            <span class="font-label-sm text-label-sm text-outline">LESSONS</span>
+          </div>
+        </div>
+
+        <div class="ai-stat-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="p-2 bg-secondary/10 rounded-lg text-secondary">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            </div>
+            <h3 class="font-title-md text-title-md text-on-surface-variant">Accuracy Rate</h3>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="font-headline-lg text-headline-lg text-secondary font-black" id="accuracy-rate">0%</span>
+            <span class="font-label-sm text-label-sm text-outline">AVERAGE</span>
+          </div>
+        </div>
+
+        <div class="ai-stat-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="p-2 bg-tertiary-container/10 rounded-lg text-tertiary">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">schedule</span>
+            </div>
+            <h3 class="font-title-md text-title-md text-on-surface-variant">Total Time</h3>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="font-headline-lg text-headline-lg text-on-surface font-black" id="total-time">0h</span>
+            <span class="font-label-sm text-label-sm text-outline">PRACTICED</span>
+          </div>
+        </div>
+
+        <div class="ai-stat-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="p-2 bg-primary/10 rounded-lg text-primary">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+            </div>
+            <h3 class="font-title-md text-title-md text-on-surface-variant">Current Streak</h3>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="font-headline-lg text-headline-lg text-primary font-black" id="current-streak">0</span>
+            <span class="font-label-sm text-label-sm text-outline">DAYS</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 选择练习区域 -->
+      <section id="practice-selection" class="mb-stack-lg">
+        <h2 class="font-title-md text-title-md text-on-surface mb-stack-md">Choose Your Practice</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter" id="practice-list">
+          <!-- 练习卡片通过JS动态生成 -->
+        </div>
+      </section>
+
+      <!-- 练习区域（默认隐藏） -->
+      <section id="practice-area" class="hidden">
+        <!-- 返回按钮 -->
+        <div class="mb-stack-md">
+          <button class="ai-button ai-button--text" onclick="backToSelection()">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <span>Back to List</span>
+          </button>
+        </div>
+
+        <!-- 音频播放器卡片 -->
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm mb-stack-lg overflow-hidden">
+          <div class="audio-player p-8 text-white">
+            <div class="flex items-center justify-between mb-6">
+              <div class="flex-1">
+                <h3 class="font-title-md text-title-md mb-1" id="audio-title">Conversation 1</h3>
+                <p class="text-label-sm opacity-90" id="audio-info">
+                  <span class="material-symbols-outlined text-sm align-middle">school</span>
+                  CET-6 |
+                  <span class="material-symbols-outlined text-sm align-middle">schedule</span>
+                  <span id="audio-duration">2:30</span>
+                </p>
+              </div>
+              <div class="wave-animation paused" id="wave-animation">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+              </div>
+            </div>
+
+            <!-- 进度条 -->
+            <div class="mb-4">
+              <input type="range" class="progress-slider" id="audio-progress" min="0" max="100" value="0"/>
+              <div class="flex justify-between mt-2 text-sm opacity-90">
+                <span id="current-time">0:00</span>
+                <span id="total-duration">0:00</span>
+              </div>
+            </div>
+
+            <!-- 控制按钮 -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <!-- 倒退10秒 -->
+                <button class="ai-icon-btn text-white hover:bg-white/20" onclick="skipBackward()" title="Backward 10s">
+                  <span class="material-symbols-outlined">replay_10</span>
+                </button>
+                <!-- 播放/暂停 -->
+                <button class="ai-icon-btn bg-white text-primary hover:bg-white/90" id="play-btn" onclick="togglePlay()" title="Play/Pause">
+                  <span class="material-symbols-outlined">play_arrow</span>
+                </button>
+                <!-- 前进10秒 -->
+                <button class="ai-icon-btn text-white hover:bg-white/20" onclick="skipForward()" title="Forward 10s">
+                  <span class="material-symbols-outlined">forward_10</span>
+                </button>
+              </div>
+
+              <div class="flex items-center gap-4">
+                <!-- 速度控制 -->
+                <div class="flex items-center gap-2">
+                  <span class="text-sm opacity-90">Speed:</span>
+                  <button class="speed-btn" onclick="setSpeed(0.75)">0.75x</button>
+                  <button class="speed-btn active" onclick="setSpeed(1)">1x</button>
+                  <button class="speed-btn" onclick="setSpeed(1.25)">1.25x</button>
+                  <button class="speed-btn" onclick="setSpeed(1.5)">1.5x</button>
+                </div>
+                <!-- 音量 -->
+                <button class="ai-icon-btn text-white hover:bg-white/20" onclick="toggleMute()" id="mute-btn" title="Mute">
+                  <span class="material-symbols-outlined">volume_up</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 朗读模式：当前正在朗读的句子 -->
+            <div class="mt-5 pt-4 border-t border-white/25 hidden" id="tts-caption-wrap">
+              <p class="font-label-sm text-label-sm uppercase opacity-75 mb-1">Now Reading · TTS Mode</p>
+              <p class="text-sm leading-relaxed opacity-95" id="tts-caption"></p>
+            </div>
+          </div>
+
+          <!-- 隐藏的音频元素 -->
+          <audio id="audio-element" preload="metadata"></audio>
+        </div>
+
+        <!-- 听力原文和题目切换 -->
+        <div class="flex items-center gap-4 mb-stack-md">
+          <button class="ai-button ai-button--primary" id="show-questions-btn" onclick="showSection('questions')">
+            <span class="material-symbols-outlined">quiz</span>
+            <span>Questions</span>
+          </button>
+          <button class="ai-button ai-button--secondary" id="show-transcript-btn" onclick="showSection('transcript')">
+            <span class="material-symbols-outlined">article</span>
+            <span>Transcript</span>
+          </button>
+          <button class="ai-button ai-button--text" id="toggle-transcript-btn" onclick="toggleTranscript()" style="display: none;">
+            <span class="material-symbols-outlined">visibility</span>
+            <span>Show Transcript</span>
+          </button>
+        </div>
+
+        <!-- 题目区域 -->
+        <section id="questions-section" class="mb-stack-lg">
+          <h2 class="font-title-md text-title-md text-on-surface mb-stack-md">Comprehension Questions</h2>
+          <div class="space-y-stack-md" id="quiz-container">
+            <!-- 题目通过JS动态加载 -->
+          </div>
+
+          <!-- 提交按钮 -->
+          <div class="flex items-center justify-center gap-4 mt-stack-lg">
+            <button class="ai-button ai-button--primary" onclick="submitAnswers()">
+              <span class="material-symbols-outlined">check</span>
+              <span>Submit Answers</span>
+            </button>
+            <button class="ai-button ai-button--secondary" onclick="showExplanation()">
+              <span class="material-symbols-outlined">lightbulb</span>
+              <span>Show Explanation</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 听力原文区域 -->
+        <section id="transcript-section" class="mb-stack-lg hidden">
+          <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8">
+            <div class="flex items-center justify-between mb-stack-md">
+              <h3 class="font-title-md text-title-md text-on-surface">Transcript</h3>
+              <div class="flex items-center gap-2">
+                <button class="ai-icon-btn" onclick="adjustFontSize(-1)" title="减小字号">
+                  <span class="material-symbols-outlined">text_decrease</span>
+                </button>
+                <button class="ai-icon-btn" onclick="adjustFontSize(1)" title="增大字号">
+                  <span class="material-symbols-outlined">text_increase</span>
+                </button>
+                <button class="ai-icon-btn" onclick="printTranscript()" title="打印">
+                  <span class="material-symbols-outlined">print</span>
+                </button>
+              </div>
+            </div>
+            <div class="transcript-text text-body-lg text-on-surface max-w-4xl" id="transcript-content">
+              <!-- 听力原文通过JS动态加载 -->
+            </div>
+          </div>
+        </section>
+
+        <!-- 结果展示区域（默认隐藏） -->
+        <section id="result-section" class="hidden mt-stack-lg">
+          <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8">
+            <h2 class="font-title-md text-title-md text-on-surface mb-stack-md">Your Results</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-stack-md">
+              <div class="text-center">
+                <p class="text-label-sm text-outline mb-1">正确率</p>
+                <p class="font-headline-lg text-headline-lg text-primary" id="score-percentage">0%</p>
+              </div>
+              <div class="text-center">
+                <p class="text-label-sm text-outline mb-1">正确题数</p>
+                <p class="font-headline-lg text-headline-lg text-secondary" id="correct-count">0/0</p>
+              </div>
+              <div class="text-center">
+                <p class="text-label-sm text-outline mb-1">听力次数</p>
+                <p class="font-headline-lg text-headline-lg text-tertiary" id="listen-count">1</p>
+              </div>
+              <div class="text-center">
+                <p class="text-label-sm text-outline mb-1">用时</p>
+                <p class="font-headline-lg text-headline-lg text-on-surface" id="time-used">0:00</p>
+              </div>
+            </div>
+
+            <!-- 学习建议 -->
+            <div class="bg-surface-container-high rounded-lg p-4 mb-stack-md">
+              <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-primary">tips_and_updates</span>
+                <div>
+                  <p class="text-label-sm text-outline mb-1">学习建议</p>
+                  <p class="text-body-md text-on-surface-variant" id="study-tip">
+                    继续保持！听力练习需要持续的努力。建议每天至少练习30分钟。
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-center gap-4">
+              <button class="ai-button ai-button--primary" onclick="resetQuiz()">
+                <span class="material-symbols-outlined">refresh</span>
+                <span>Try Again</span>
+              </button>
+              <button class="ai-button ai-button--secondary" onclick="backToSelection()">
+                <span class="material-symbols-outlined">list</span>
+                <span>Choose Another</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/data/menu-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260830b"></script>
+  <script src="js/data/listening-data.js"></script>
+
+  <script>
+    // 当前状态
+    let currentPractice = null;
+    let userAnswers = {};
+    let listenCount = 0;
+    let startTime = null;
+    let currentSpeed = 1;
+    let isMuted = false;
+    let fontSizeLevel = 0;
+    let currentFilter = 'all';
+
+    // TTS 朗读模式状态（音频文件缺失时的备用播放方式）
+    let ttsMode = false;      // 是否使用浏览器语音朗读
+    let ttsSentences = [];    // 原文拆分出的句子 [{ text, baseDur }]
+    let ttsIndex = 0;         // 当前朗读到的句子下标
+    let ttsPaused = false;    // 是否处于暂停
+    let ttsToken = 0;         // 用于作废旧回调的令牌
+
+    // 获取DOM元素
+    const audioElement = document.getElementById('audio-element');
+    const playBtn = document.getElementById('play-btn');
+    const waveAnimation = document.getElementById('wave-animation');
+    const progressSlider = document.getElementById('audio-progress');
+    const currentTimeDisplay = document.getElementById('current-time');
+    const totalDurationDisplay = document.getElementById('total-duration');
+    const muteBtn = document.getElementById('mute-btn');
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+      currentActivePage = 'listening';
+      renderMenu();
+      loadPracticeList();
+      loadStats();
+      setupAudioListeners();
+    });
+
+    // 设置音频事件监听
+    function setupAudioListeners() {
+      audioElement.addEventListener('loadedmetadata', () => {
+        if (audioElement.duration > 0) {
+          // 找到了真实音频文件，使用音频播放
+          ttsMode = false;
+          document.getElementById('tts-caption-wrap').classList.add('hidden');
+          totalDurationDisplay.textContent = formatTime(audioElement.duration);
+          document.getElementById('audio-duration').textContent = formatTime(audioElement.duration);
+        }
+      });
+
+      // 音频文件不存在时，自动切换为浏览器语音朗读（TTS）模式
+      audioElement.addEventListener('error', () => {
+        if (currentPractice) switchToTts();
+      });
+
+      audioElement.addEventListener('timeupdate', () => {
+        if (!ttsMode && audioElement.duration > 0) {
+          const progress = (audioElement.currentTime / audioElement.duration) * 100;
+          progressSlider.value = progress;
+          currentTimeDisplay.textContent = formatTime(audioElement.currentTime);
+        }
+      });
+
+      audioElement.addEventListener('ended', () => {
+        playBtn.innerHTML = '<span class="material-symbols-outlined">replay</span>';
+        waveAnimation.classList.add('paused');
+      });
+
+      progressSlider.addEventListener('input', () => {
+        if (ttsMode) {
+          // 朗读模式：根据滑块位置找到对应句子，从那里开始朗读
+          const target = (progressSlider.value / 100) * ttsTotalTime();
+          stopAndSpeak(sentenceAtTime(target));
+        } else if (audioElement.duration > 0) {
+          const time = (progressSlider.value / 100) * audioElement.duration;
+          audioElement.currentTime = time;
+        }
+      });
+    }
+
+    // 格式化时间
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // ============ 播放控制（真实音频 / TTS 朗读 双模式） ============
+
+    // 播放/暂停
+    function togglePlay() {
+      if (ttsMode) { toggleTts(); return; }
+      if (audioElement.paused) {
+        audioElement.play().catch(() => {});
+        playBtn.innerHTML = '<span class="material-symbols-outlined">pause</span>';
+        waveAnimation.classList.remove('paused');
+        listenCount++;
+        document.getElementById('listen-count').textContent = listenCount;
+      } else {
+        audioElement.pause();
+        playBtn.innerHTML = '<span class="material-symbols-outlined">play_arrow</span>';
+        waveAnimation.classList.add('paused');
+      }
+    }
+
+    // 后退10秒
+    function skipBackward() {
+      if (ttsMode) { ttsSkip(-10); return; }
+      if (audioElement.duration) audioElement.currentTime = Math.max(0, audioElement.currentTime - 10);
+    }
+
+    // 前进10秒
+    function skipForward() {
+      if (ttsMode) { ttsSkip(10); return; }
+      if (audioElement.duration) audioElement.currentTime = Math.min(audioElement.duration, audioElement.currentTime + 10);
+    }
+
+    // 设置语速
+    function setSpeed(speed) {
+      currentSpeed = speed;
+      document.querySelectorAll('.speed-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent === speed + 'x') {
+          btn.classList.add('active');
+        }
+      });
+      if (ttsMode) {
+        updateTtsProgress(); // 时长估算与语速相关，重新计算进度显示
+        if (window.speechSynthesis && speechSynthesis.speaking && !speechSynthesis.paused) {
+          stopAndSpeak(ttsIndex); // 以新语速重读当前句
+        }
+      } else {
+        audioElement.playbackRate = speed;
+      }
+    }
+
+    // 静音切换
+    function toggleMute() {
+      isMuted = !isMuted;
+      muteBtn.innerHTML = isMuted ?
+        '<span class="material-symbols-outlined">volume_off</span>' :
+        '<span class="material-symbols-outlined">volume_up</span>';
+      if (ttsMode) {
+        if (window.speechSynthesis && speechSynthesis.speaking && !speechSynthesis.paused) {
+          stopAndSpeak(ttsIndex); // 以新音量重读当前句
+        }
+      } else {
+        audioElement.muted = isMuted;
+      }
+    }
+
+    // 停止一切播放（切换练习、返回列表、提交答案时调用）
+    function stopPlayback() {
+      ttsToken++;
+      ttsPaused = false;
+      if (window.speechSynthesis) speechSynthesis.cancel();
+      if (!audioElement.paused) audioElement.pause();
+      playBtn.innerHTML = '<span class="material-symbols-outlined">play_arrow</span>';
+      waveAnimation.classList.add('paused');
+    }
+
+    // ============ TTS 语音朗读引擎 ============
+
+    // 音频缺失时切换到朗读模式
+    function switchToTts() {
+      if (ttsMode) return;
+      ttsMode = true;
+      document.getElementById('tts-caption-wrap').classList.remove('hidden');
+      if (!window.speechSynthesis) {
+        showToast('当前浏览器不支持语音朗读，请使用 Chrome 或 Edge', 'error');
+        return;
+      }
+      totalDurationDisplay.textContent = formatTime(ttsTotalTime());
+      showToast('未找到音频文件，已自动切换为浏览器语音朗读模式', 'info');
+    }
+
+    // 把听力原文（HTML）拆分成句子
+    function buildTtsSentences(transcriptHtml) {
+      const div = document.createElement('div');
+      div.innerHTML = transcriptHtml;
+      const paragraphs = [];
+      const sentences = [];
+      div.querySelectorAll('p').forEach(p => {
+        const text = p.textContent.replace(/\s+/g, ' ').trim();
+        if (!text) return;
+        const parts = text.match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g) || [text];
+        const para = [];
+        parts.forEach(part => {
+          const t = part.trim();
+          if (!t) return;
+          // 按每秒约 2.6 个单词估算句子时长（秒），用于进度条显示
+          const words = t.split(/\s+/).length;
+          sentences.push({ text: t, baseDur: Math.max(1.5, words / 2.6) });
+          para.push(sentences.length - 1);
+        });
+        paragraphs.push(para);
+      });
+      return { paragraphs, sentences };
+    }
+
+    // 渲染听力原文（每个句子包一层 span：朗读时高亮，点击可从该句开始朗读）
+    function renderTranscript(paragraphs, sentences) {
+      document.getElementById('transcript-content').innerHTML = paragraphs.map(para =>
+        '<p>' + para.map(i =>
+          `<span class="tts-sentence" data-si="${i}" onclick="seekToSentence(${i})">${escapeHtml(sentences[i].text)}</span>`
+        ).join(' ') + '</p>'
+      ).join('\n');
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // —— 以下时间均为估算值，仅用于进度条与时间显示 ——
+
+    function ttsSentenceDur(i) { return ttsSentences[i].baseDur / currentSpeed; }
+
+    function ttsTimeAt(index) {
+      let t = 0;
+      for (let i = 0; i < index && i < ttsSentences.length; i++) t += ttsSentenceDur(i);
+      return t;
+    }
+
+    function ttsTotalTime() { return ttsTimeAt(ttsSentences.length); }
+
+    function sentenceAtTime(target) {
+      let acc = 0;
+      for (let i = 0; i < ttsSentences.length; i++) {
+        acc += ttsSentenceDur(i);
+        if (acc > target) return i;
+      }
+      return Math.max(0, ttsSentences.length - 1);
+    }
+
+    function updateTtsProgress() {
+      const current = ttsTimeAt(ttsIndex);
+      const total = ttsTotalTime();
+      progressSlider.value = total > 0 ? Math.min(100, (current / total) * 100) : 0;
+      currentTimeDisplay.textContent = formatTime(current);
+      totalDurationDisplay.textContent = formatTime(total);
+    }
+
+    // 高亮当前句子 + 更新“正在朗读”提示
+    function highlightSentence(index) {
+      document.querySelectorAll('.tts-sentence.speaking').forEach(el => el.classList.remove('speaking'));
+      const el = document.querySelector(`.tts-sentence[data-si="${index}"]`);
+      if (el) el.classList.add('speaking');
+      document.getElementById('tts-caption').textContent = ttsSentences[index] ? ttsSentences[index].text : '';
+    }
+
+    // 取消当前朗读，并从第 index 句重新开始
+    function stopAndSpeak(index) {
+      if (!window.speechSynthesis) return;
+      ttsToken++;
+      const token = ttsToken;
+      speechSynthesis.cancel();
+      ttsIndex = index;
+      // 稍等片刻再开播，避免与正在取消的朗读冲突
+      setTimeout(() => speakSentence(token), 150);
+    }
+
+    // 朗读当前句子（token 用于作废切换/取消之后的旧回调）
+    function speakSentence(token) {
+      if (token !== ttsToken) return;
+      if (ttsIndex >= ttsSentences.length) {
+        // 全部读完
+        playBtn.innerHTML = '<span class="material-symbols-outlined">replay</span>';
+        waveAnimation.classList.add('paused');
+        return;
+      }
+      highlightSentence(ttsIndex);
+      updateTtsProgress();
+
+      const u = new SpeechSynthesisUtterance(ttsSentences[ttsIndex].text);
+      u.lang = 'en-US';
+      u.rate = currentSpeed;
+      u.volume = isMuted ? 0 : 1;
+      u.onend = () => {
+        if (token !== ttsToken) return;
+        ttsIndex++;
+        updateTtsProgress();
+        if (!ttsPaused) speakSentence(token);
+      };
+      u.onerror = (e) => {
+        if (token !== ttsToken) return;
+        if (e.error === 'interrupted' || e.error === 'canceled') return;
+        ttsIndex++; // 出错时跳过这句，避免卡住
+        if (!ttsPaused) speakSentence(token);
+      };
+      speechSynthesis.speak(u);
+    }
+
+    // 朗读模式的 播放/暂停
+    function toggleTts() {
+      if (!window.speechSynthesis) {
+        showToast('当前浏览器不支持语音朗读，请使用 Chrome 或 Edge', 'error');
+        return;
+      }
+      if (speechSynthesis.speaking && !speechSynthesis.paused) {
+        // 正在朗读 → 暂停
+        ttsPaused = true;
+        speechSynthesis.pause();
+        playBtn.innerHTML = '<span class="material-symbols-outlined">play_arrow</span>';
+        waveAnimation.classList.add('paused');
+      } else if (speechSynthesis.paused) {
+        // 已暂停 → 继续
+        ttsPaused = false;
+        speechSynthesis.resume();
+        playBtn.innerHTML = '<span class="material-symbols-outlined">pause</span>';
+        waveAnimation.classList.remove('paused');
+      } else {
+        // 未开始或已读完 → 从当前位置开始
+        ttsPaused = false;
+        if (ttsIndex >= ttsSentences.length) ttsIndex = 0;
+        listenCount++;
+        document.getElementById('listen-count').textContent = listenCount;
+        stopAndSpeak(ttsIndex);
+        playBtn.innerHTML = '<span class="material-symbols-outlined">pause</span>';
+        waveAnimation.classList.remove('paused');
+      }
+    }
+
+    // 朗读模式下前进/后退 10 秒（按估算时间换算成句子）
+    function ttsSkip(delta) {
+      const target = Math.max(0, Math.min(ttsTotalTime() - 0.5, ttsTimeAt(ttsIndex) + delta));
+      ttsPaused = false;
+      playBtn.innerHTML = '<span class="material-symbols-outlined">pause</span>';
+      waveAnimation.classList.remove('paused');
+      stopAndSpeak(sentenceAtTime(target));
+    }
+
+    // 点击原文中的某个句子，从该句开始朗读
+    function seekToSentence(index) {
+      if (!ttsMode) return;
+      ttsPaused = false;
+      playBtn.innerHTML = '<span class="material-symbols-outlined">pause</span>';
+      waveAnimation.classList.remove('paused');
+      stopAndSpeak(index);
+    }
+
+    // 加载练习列表
+    function loadPracticeList() {
+      const container = document.getElementById('practice-list');
+      const practices = currentFilter === 'all' ?
+        listeningData.practices :
+        listeningData.practices.filter(p => p.difficulty === currentFilter);
+
+      container.innerHTML = practices.map(practice => `
+        <div class="ai-module-card group bg-surface-container-lowest rounded-xl p-6 border border-outline-variant hover:border-primary shadow-[0px_4px_12px_rgba(0,0,0,0.02)] hover:shadow-[0px_10px_25px_rgba(37,99,235,0.08)] transition-all cursor-pointer min-h-[160px] flex flex-col justify-between"
+             onclick="startPractice(${practice.id})">
+          <div class="flex justify-between items-start">
+            <div class="p-3 bg-surface-container rounded-lg text-primary group-hover:bg-primary/10 transition-colors">
+              <span class="material-symbols-outlined text-[32px]">${getTypeIcon(practice.type)}</span>
+            </div>
+            <span class="ai-badge ai-badge--primary">${practice.difficulty}</span>
+          </div>
+          <div class="mt-4">
+            <h3 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">${practice.title}</h3>
+            <p class="text-body-md text-on-surface-variant mt-1 line-clamp-2">${practice.description}</p>
+            <div class="flex items-center gap-3 mt-2 text-label-sm text-outline">
+              <span class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">schedule</span>
+                ${practice.duration}
+              </span>
+              <span class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">quiz</span>
+                ${practice.questions.length} questions
+              </span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // 更新进度显示
+      const completed = api.getCount('listeningCompleted');
+      document.getElementById('listening-progress').textContent = `${completed}/${listeningData.practices.length}`;
+    }
+
+    // 获取类型图标
+    function getTypeIcon(type) {
+      const icons = {
+        exam: 'workspace_premium',
+        conversation: 'forum',
+        lecture: 'school',
+        news: 'newspaper'
+      };
+      return icons[type] || 'headset';
+    }
+
+    // 筛选类型
+    function filterByType(type, el) {
+      currentFilter = type;
+      loadPracticeList();
+
+      // 更新导航高亮
+      document.querySelectorAll('.ai-nav-item').forEach(item => {
+        item.classList.remove('ai-nav-item--active');
+      });
+      if (el) el.classList.add('ai-nav-item--active');
+    }
+
+    // 开始练习
+    function startPractice(id) {
+      currentPractice = listeningData.practices.find(p => p.id === id);
+      if (!currentPractice) return;
+
+      // 重置状态
+      userAnswers = {};
+      listenCount = 0;
+      startTime = new Date();
+
+      // 停止上一次的播放，重置朗读状态
+      stopPlayback();
+      ttsMode = false;
+      ttsIndex = 0;
+      progressSlider.value = 0;
+      currentTimeDisplay.textContent = '0:00';
+      totalDurationDisplay.textContent = currentPractice.duration;
+      document.getElementById('tts-caption-wrap').classList.add('hidden');
+
+      // 拆分原文句子，用于朗读高亮与进度估算
+      const ttsModel = buildTtsSentences(currentPractice.transcript);
+      ttsSentences = ttsModel.sentences;
+
+      // 设置音频（文件不存在时会自动切换为朗读模式）
+      audioElement.src = currentPractice.audioUrl;
+      document.getElementById('audio-title').textContent = currentPractice.title;
+      document.getElementById('audio-info').innerHTML = `
+        <span class="material-symbols-outlined text-sm align-middle">school</span>
+        ${currentPractice.difficulty} |
+        <span class="material-symbols-outlined text-sm align-middle">schedule</span>
+        <span id="audio-duration">${currentPractice.duration}</span>
+      `;
+
+      // 渲染听力原文（按句子分段，支持朗读高亮和点击定位）
+      renderTranscript(ttsModel.paragraphs, ttsSentences);
+      document.getElementById('tts-caption').textContent = '';
+
+      // 生成题目
+      renderQuestions(currentPractice.questions);
+
+      // 显示练习区域
+      document.getElementById('practice-selection').classList.add('hidden');
+      document.getElementById('practice-area').classList.remove('hidden');
+      document.getElementById('result-section').classList.add('hidden');
+
+      // 显示题目区域
+      showSection('questions');
+
+      // 滚动到顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 渲染题目
+    function renderQuestions(questions) {
+      const container = document.getElementById('quiz-container');
+      container.innerHTML = questions.map((q, index) => `
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6" id="question-${index}">
+          <div class="flex items-start gap-3 mb-stack-md">
+            <span class="ai-badge ai-badge--primary">Q${index + 1}</span>
+            <p class="text-body-lg text-on-surface flex-1">${q.question}</p>
+          </div>
+          <div class="space-y-sm">
+            ${q.options.map((option, optIndex) => `
+              <label class="quiz-option flex items-center gap-3 p-4 rounded-lg border border-outline-variant cursor-pointer"
+                     id="option-${index}-${optIndex}"
+                     onclick="selectOption(${index}, ${optIndex})">
+                <input type="radio" name="question-${index}" value="${optIndex}" class="ai-checkbox"/>
+                <span class="text-body-md text-on-surface">${String.fromCharCode(65 + optIndex)}. ${option}</span>
+              </label>
+            `).join('')}
+          </div>
+          <div class="mt-stack-md hidden" id="explanation-${index}">
+            <div class="bg-surface-container-high rounded-lg p-4">
+              <p class="text-label-sm text-outline mb-1">答案解析</p>
+              <p class="text-body-md text-on-surface-variant">${q.explanation}</p>
+              <p class="text-body-md text-secondary mt-2">
+                正确答案: ${String.fromCharCode(65 + q.correctAnswer)}
+              </p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 选择选项
+    function selectOption(questionIndex, optionIndex) {
+      userAnswers[questionIndex] = optionIndex;
+
+      // 更新UI
+      const options = document.querySelectorAll(`[id^="option-${questionIndex}-"]`);
+      options.forEach((opt, idx) => {
+        opt.classList.remove('selected');
+        if (idx === optionIndex) {
+          opt.classList.add('selected');
+          opt.querySelector('input').checked = true;
+        }
+      });
+    }
+
+    // 显示区域
+    function showSection(section) {
+      const questionsSection = document.getElementById('questions-section');
+      const transcriptSection = document.getElementById('transcript-section');
+
+      if (section === 'questions') {
+        questionsSection.classList.remove('hidden');
+        transcriptSection.classList.add('hidden');
+      } else {
+        questionsSection.classList.add('hidden');
+        transcriptSection.classList.remove('hidden');
+      }
+    }
+
+    // 切换听力原文显示
+    function toggleTranscript() {
+      const transcriptSection = document.getElementById('transcript-section');
+      transcriptSection.classList.toggle('hidden');
+    }
+
+    // 提交答案
+    function submitAnswers() {
+      if (Object.keys(userAnswers).length === 0) {
+        showToast('请先完成题目再提交！', 'error');
+        return;
+      }
+
+      // 停止播放
+      stopPlayback();
+
+      // 计算分数
+      let correctCount = 0;
+      const questions = currentPractice.questions;
+
+      questions.forEach((q, index) => {
+        const userAnswer = userAnswers[index];
+        const optionElement = document.getElementById(`option-${index}-${userAnswer}`);
+        const explanationElement = document.getElementById(`explanation-${index}`);
+
+        if (userAnswer === q.correctAnswer) {
+          correctCount++;
+          if (optionElement) optionElement.classList.add('correct');
+        } else {
+          if (optionElement) optionElement.classList.add('incorrect');
+          // 显示正确答案
+          const correctOption = document.getElementById(`option-${index}-${q.correctAnswer}`);
+          if (correctOption) correctOption.classList.add('correct');
+        }
+
+        // 显示解析
+        if (explanationElement) explanationElement.classList.remove('hidden');
+      });
+
+      // 计算用时
+      const timeUsed = Math.round((new Date() - startTime) / 1000 / 60);
+      const percentage = Math.round((correctCount / questions.length) * 100);
+
+      // 显示结果
+      document.getElementById('score-percentage').textContent = percentage + '%';
+      document.getElementById('correct-count').textContent = `${correctCount}/${questions.length}`;
+      document.getElementById('listen-count').textContent = listenCount;
+      document.getElementById('time-used').textContent = `${timeUsed} min`;
+
+      // 显示学习建议
+      document.getElementById('study-tip').textContent = getStudyTip(percentage);
+
+      document.getElementById('result-section').classList.remove('hidden');
+
+      // 滚动到结果区域
+      document.getElementById('result-section').scrollIntoView({ behavior: 'smooth' });
+
+      // 保存成绩
+      saveProgress(correctCount, questions.length, percentage);
+
+      showToast(`提交成功！正确率: ${percentage}%`, 'success');
+    }
+
+    // 获取学习建议
+    function getStudyTip(percentage) {
+      if (percentage >= 90) {
+        return '太棒了！你的听力理解能力很强。可以尝试更快速度播放或更难的材料。';
+      } else if (percentage >= 70) {
+        return '做得不错！继续保持。注意听关键词和连接词，它们通常包含重要信息。';
+      } else if (percentage >= 50) {
+        return '还需要继续练习。建议先看听力原文，理解内容后再听，注意把握主旨大意。';
+      } else {
+        return '不要气馁！听力是需要长期训练的技能。建议从较慢的语速开始，多听几遍。';
+      }
+    }
+
+    // 保存进度
+    function saveProgress(correctCount, totalQuestions, percentage) {
+      api.addRecord('listening', {
+        practiceId: currentPractice.id,
+        title: currentPractice.title,
+        correctCount,
+        totalQuestions,
+        percentage,
+        listenCount,
+        date: new Date().toISOString()
+      });
+    }
+
+    // 显示解析
+    function showExplanation() {
+      const questions = currentPractice.questions;
+      questions.forEach((q, index) => {
+        const explanationElement = document.getElementById(`explanation-${index}`);
+        if (explanationElement) explanationElement.classList.remove('hidden');
+      });
+      showToast('已显示所有题目解析', 'info');
+    }
+
+    // 重置练习
+    function resetQuiz() {
+      userAnswers = {};
+      listenCount = 0;
+      startTime = new Date();
+
+      // 隐藏结果区域
+      document.getElementById('result-section').classList.add('hidden');
+
+      // 重置播放
+      stopPlayback();
+      ttsIndex = 0;
+      progressSlider.value = 0;
+      currentTimeDisplay.textContent = '0:00';
+
+      // 重新生成题目
+      renderQuestions(currentPractice.questions);
+
+      // 显示题目区域
+      showSection('questions');
+
+      // 滚动到顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 返回列表
+    function backToSelection() {
+      // 停止播放
+      stopPlayback();
+
+      document.getElementById('practice-area').classList.add('hidden');
+      document.getElementById('practice-selection').classList.remove('hidden');
+      loadPracticeList();
+    }
+
+    // 加载统计信息
+    function loadStats() {
+      const history = api.getRecords('listening');
+      const totalTime = history.reduce((sum, h) => sum + (h.listenCount || 1) * 5, 0); // 估算
+      const correctCount = history.reduce((sum, h) => sum + h.correctCount, 0);
+      const totalQuestions = history.reduce((sum, h) => sum + h.totalQuestions, 0);
+
+      document.getElementById('total-completed').textContent = history.length;
+      document.getElementById('accuracy-rate').textContent =
+        totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) + '%' : '0%';
+      document.getElementById('total-time').textContent = Math.round(totalTime / 60) + 'h';
+    }
+
+    // 显示统计
+    function showStats() {
+      showToast('统计功能开发中...', 'info');
+    }
+
+    // 调整字号
+    function adjustFontSize(delta) {
+      fontSizeLevel = Math.max(-2, Math.min(2, fontSizeLevel + delta));
+      const content = document.getElementById('transcript-content');
+      const sizes = ['16px', '18px', '20px', '22px', '24px'];
+      content.style.fontSize = sizes[fontSizeLevel + 2];
+    }
+
+    // 打印听力原文
+    function printTranscript() {
+      window.print();
+    }
+  </script>
+
+</body>
+</html>

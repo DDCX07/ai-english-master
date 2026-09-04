@@ -1,0 +1,44 @@
+<!--
+  顶部导航栏组件 (Header)
+  用法: 在你的HTML中引入这个文件
+-->
+<header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+
+  <!-- 左侧：页面标题和子导航 -->
+  <div class="flex items-center gap-stack-lg">
+    <h2 class="ai-page-title font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary hidden md:block" id="ai-page-title">
+      Dashboard
+    </h2>
+
+    <nav class="hidden lg:flex gap-6" id="ai-sub-nav">
+      <a class="ai-nav-item ai-nav-item--active" href="#">Study Plan</a>
+    </nav>
+  </div>
+
+  <!-- 右侧：搜索和用户操作 -->
+  <div class="flex items-center gap-4">
+    <!-- 搜索框 -->
+    <div class="relative hidden md:block">
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+      <input class="ai-input ai-input--search" placeholder="Search..." type="text"/>
+    </div>
+
+    <!-- 通知按钮 -->
+    <button class="ai-icon-btn" aria-label="Notifications">
+      <span class="material-symbols-outlined">notifications</span>
+    </button>
+
+    <!-- 历史记录按钮 -->
+    <button class="ai-icon-btn" aria-label="History">
+      <span class="material-symbols-outlined">history</span>
+    </button>
+
+    <!-- 升级按钮 -->
+    <button class="ai-button ai-button--secondary" onclick="alert('升级功能即将上线！')">
+      Upgrade Pro
+    </button>
+
+    <!-- 用户头像 -->
+    <img alt="User Profile" class="ai-avatar" src="https://via.placeholder.com/40" id="ai-header-avatar"/>
+  </div>
+</header>

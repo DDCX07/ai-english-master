@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - Translation Practice</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff", "tertiary": "#784b00", "on-error": "#ffffff",
+            "primary-container": "#2563eb", "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655", "primary": "#004ac6",
+            "secondary": "#006c49", "primary-fixed": "#dbe1ff",
+            "outline": "#737686", "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc", "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff", "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700", "on-surface": "#191c1e",
+            "tertiary-container": "#996100", "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f", "on-background": "#191c1e",
+            "inverse-on-surface": "#eff1f3", "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00", "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133", "error-container": "#ffdad6",
+            "background": "#f7f9fb", "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff", "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd", "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236", "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d", "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb", "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db", "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8", "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a", "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px", "stack-lg": "32px", "stack-sm": "8px",
+            "margin-desktop": "40px", "container-max": "1280px",
+            "margin-mobile": "16px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"],
+            "body-lg": ["Inter"], "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* 翻译输入框 */
+    .translation-input {
+      min-height: 140px;
+      line-height: 1.8;
+      resize: vertical;
+    }
+
+    /* 得分点状态 */
+    .keyword-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 14px;
+      border: 1px solid var(--ai-outline-variant, #c3c6d7);
+    }
+
+    .keyword-chip.hit {
+      border-color: var(--ai-secondary, #006c49);
+      background-color: rgba(0, 108, 73, 0.08);
+      color: var(--ai-secondary, #006c49);
+    }
+
+    .keyword-chip.miss {
+      border-color: var(--ai-error, #ba1a1a);
+      background-color: rgba(186, 26, 26, 0.06);
+      color: var(--ai-error, #ba1a1a);
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- 侧边栏导航 -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">CET-6 Prep Mode</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list"></ul>
+    </div>
+
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary hidden md:block">
+          Translation Practice
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-outline">translate</span>
+          <span class="text-label-sm text-outline" id="translate-progress">0/28</span>
+        </div>
+        <button class="ai-button ai-button--secondary" onclick="showMyRecords()">
+          <span class="material-symbols-outlined">insights</span>
+          <span class="hidden md:inline">My Records</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto w-full">
+
+      <!-- 筛选区域 -->
+      <section class="mb-stack-lg">
+        <div class="flex flex-wrap items-center gap-2 mb-stack-sm">
+          <span class="text-label-sm text-outline">Mode:</span>
+          <button class="ai-button ai-button--text active" data-mode="sentences" onclick="setMode('sentences', this)">句子练习</button>
+          <button class="ai-button ai-button--text" data-mode="passages" onclick="setMode('passages', this)">真题段落</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 mb-stack-sm">
+          <span class="text-label-sm text-outline">Level:</span>
+          <button class="ai-button ai-button--text active" data-level="all" onclick="setLevelFilter('all', this)">All</button>
+          <button class="ai-button ai-button--text" data-level="CET-4" onclick="setLevelFilter('CET-4', this)">CET-4</button>
+          <button class="ai-button ai-button--text" data-level="CET-6" onclick="setLevelFilter('CET-6', this)">CET-6</button>
+          <button class="ai-button ai-button--text" data-level="IELTS" onclick="setLevelFilter('IELTS', this)">IELTS</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-label-sm text-outline">Topic:</span>
+          <button class="ai-button ai-button--text active" data-cat="all" onclick="setCategoryFilter('all', this)">All</button>
+          <button class="ai-button ai-button--text" data-cat="生活与社会" onclick="setCategoryFilter('生活与社会', this)">生活与社会</button>
+          <button class="ai-button ai-button--text" data-cat="经济与科技" onclick="setCategoryFilter('经济与科技', this)">经济与科技</button>
+          <button class="ai-button ai-button--text" data-cat="教育与文化" onclick="setCategoryFilter('教育与文化', this)">教育与文化</button>
+        </div>
+      </section>
+
+      <!-- 练习区域 -->
+      <section class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+        <!-- 进度条 -->
+        <div class="flex items-center justify-between mb-stack-md">
+          <span class="ai-badge ai-badge--primary" id="current-badge">1 / 28</span>
+          <div class="flex items-center gap-2">
+            <span class="ai-badge" id="current-level">CET-4</span>
+            <span class="text-label-sm text-outline" id="current-category">生活与社会</span>
+          </div>
+        </div>
+        <div class="ai-progress-bar mb-stack-lg">
+          <div class="ai-progress-bar__fill ai-progress-bar__fill--primary" id="progress-fill" style="width: 4%;"></div>
+        </div>
+
+        <!-- 中文原句 -->
+        <div class="bg-surface-container rounded-lg p-6 mb-stack-md">
+          <p class="text-label-sm text-outline mb-2" id="chinese-label">将下面的句子翻译成英文</p>
+          <p class="text-body-lg text-on-surface leading-relaxed" id="chinese-sentence">中文原句</p>
+        </div>
+
+        <!-- 翻译输入 -->
+        <div class="mb-stack-md">
+          <textarea class="ai-input translation-input w-full" id="translation-input"
+                    placeholder="Type your English translation here..."></textarea>
+          <p class="text-label-sm text-outline mt-1" id="input-hint">&nbsp;</p>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex items-center justify-between">
+          <button class="ai-button ai-button--text" onclick="toggleHint()">
+            <span class="material-symbols-outlined">lightbulb</span>
+            <span id="hint-btn-text">Show Hint</span>
+          </button>
+          <div class="flex items-center gap-4">
+            <button class="ai-button ai-button--secondary" onclick="skipItem()">
+              <span class="material-symbols-outlined">skip_next</span>
+              <span>Skip</span>
+            </button>
+            <button class="ai-button ai-button--primary" onclick="checkAnswer()">
+              <span class="material-symbols-outlined">check</span>
+              <span>Check Answer</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 提示（默认隐藏） -->
+        <div class="hidden bg-tertiary-fixed-dim/30 border border-tertiary/30 rounded-lg p-4 mt-stack-md" id="hint-section">
+          <p class="text-body-md text-on-surface-variant" id="hint-content"></p>
+        </div>
+
+        <!-- 批改结果（默认隐藏） -->
+        <div class="hidden mt-stack-lg" id="result-section">
+          <!-- 得分 -->
+          <div class="flex items-center gap-4 mb-stack-md">
+            <div class="text-center">
+              <p class="font-headline-lg text-headline-lg" id="score-display">0%</p>
+              <p class="text-label-sm text-outline">Score</p>
+            </div>
+            <div class="flex-1">
+              <p class="text-body-md text-on-surface-variant" id="score-comment"></p>
+            </div>
+          </div>
+
+          <!-- 得分点 -->
+          <div class="mb-stack-md">
+            <p class="text-label-sm text-outline mb-2">Key Expressions</p>
+            <div class="flex flex-wrap gap-2" id="keyword-chips"></div>
+          </div>
+
+          <!-- 参考译文 -->
+          <div class="bg-surface-container rounded-lg p-6 mb-stack-md">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-label-sm text-outline">Reference Translation</p>
+              <button class="ai-icon-btn" onclick="readReference()" title="朗读参考译文">
+                <span class="material-symbols-outlined">volume_up</span>
+              </button>
+            </div>
+            <p class="text-body-lg text-on-surface leading-relaxed" id="reference-english"></p>
+          </div>
+
+          <!-- 考点说明 -->
+          <div class="bg-surface-container-high rounded-lg p-4 mb-stack-md">
+            <p class="text-label-sm text-outline mb-1">Translation Notes</p>
+            <p class="text-body-md text-on-surface-variant" id="note-content"></p>
+          </div>
+
+          <!-- 下一题 -->
+          <div class="flex justify-end">
+            <button class="ai-button ai-button--primary" onclick="nextItem()">
+              <span>Next Sentence</span>
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/data/menu-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260830b"></script>
+  <script src="js/data/translation-data.js"></script>
+
+  <script>
+    // 当前状态
+    let mode = 'sentences'; // sentences = 句子练习；passages = 真题段落
+    let levelFilter = 'all';
+    let categoryFilter = 'all';
+    let currentList = [];   // 当前筛选后的题目列表
+    let currentIndex = 0;
+    let checked = false;    // 当前题是否已批改
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+      currentActivePage = 'translation';
+      renderMenu();
+      // 级别筛选默认跟随全局备考模式（主页/侧边栏选择的四级或六级）
+      levelFilter = api.getPrepLevel();
+      document.querySelectorAll('[data-level]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.level === levelFilter);
+      });
+      applyFilter();
+    });
+
+    // 切换练习模式（句子 / 真题段落）
+    function setMode(m, el) {
+      if (mode === m) return;
+      mode = m;
+      document.querySelectorAll('[data-mode]').forEach(btn => btn.classList.remove('active'));
+      if (el) el.classList.add('active');
+      applyFilter();
+    }
+
+    // 应用筛选并重新开始
+    function applyFilter() {
+      const source = mode === 'passages' ? translationData.passages : translationData.items;
+      currentList = source.filter(item => {
+        if (levelFilter !== 'all' && item.level !== levelFilter) return false;
+        if (categoryFilter !== 'all' && item.category !== categoryFilter) return false;
+        return true;
+      });
+
+      if (currentList.length === 0) {
+        showToast('该筛选组合下暂无题目', 'info');
+        return;
+      }
+      currentIndex = 0;
+      loadItem();
+      document.getElementById('translate-progress').textContent = `0/${currentList.length}`;
+    }
+
+    function setLevelFilter(level, el) {
+      levelFilter = level;
+      document.querySelectorAll('[data-level]').forEach(btn => btn.classList.remove('active'));
+      if (el) el.classList.add('active');
+      applyFilter();
+    }
+
+    function setCategoryFilter(cat, el) {
+      categoryFilter = cat;
+      document.querySelectorAll('[data-cat]').forEach(btn => btn.classList.remove('active'));
+      if (el) el.classList.add('active');
+      applyFilter();
+    }
+
+    // 加载当前题目
+    function loadItem() {
+      const item = currentList[currentIndex];
+      checked = false;
+
+      document.getElementById('current-badge').textContent = `${currentIndex + 1} / ${currentList.length}`;
+      document.getElementById('current-level').textContent = item.level;
+      document.getElementById('current-category').textContent =
+        item.exam ? `${item.category} · ${item.exam}` : item.category;
+      document.getElementById('progress-fill').style.width =
+        Math.round((currentIndex / currentList.length) * 100) + '%';
+
+      document.getElementById('chinese-label').textContent =
+        mode === 'passages' ? '将下面的段落翻译成英文（真题）' : '将下面的句子翻译成英文';
+      document.getElementById('chinese-sentence').textContent = mode === 'passages'
+        ? `${item.title ? item.title + '：' : ''}${item.chinese}` : item.chinese;
+      document.getElementById('translation-input').value = '';
+      document.getElementById('translation-input').disabled = false;
+      document.getElementById('input-hint').innerHTML = '&nbsp;';
+      document.getElementById('result-section').classList.add('hidden');
+      document.getElementById('hint-section').classList.add('hidden');
+      document.getElementById('hint-btn-text').textContent = 'Show Hint';
+      document.getElementById('translation-input').focus();
+    }
+
+    // 显示/隐藏提示
+    function toggleHint() {
+      const section = document.getElementById('hint-section');
+      const btnText = document.getElementById('hint-btn-text');
+      const item = currentList[currentIndex];
+
+      const hidden = section.classList.toggle('hidden');
+      btnText.textContent = hidden ? 'Show Hint' : 'Hide Hint';
+      if (!hidden) {
+        // 提示 = 考点说明（不看参考译文）
+        document.getElementById('hint-content').textContent = item.note;
+      }
+    }
+
+    // 文本规范化：小写、去掉标点，只留字母和空格
+    function normalize(text) {
+      return text.toLowerCase()
+        .replace(/[^a-z\s']/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // 批改答案
+    function checkAnswer() {
+      if (checked) return;
+
+      const input = document.getElementById('translation-input').value.trim();
+      if (!input) {
+        showToast('请先输入你的译文！', 'error');
+        return;
+      }
+
+      checked = true;
+      const item = currentList[currentIndex];
+      const answer = normalize(input);
+
+      // 逐个检查得分点（用 | 分隔的可选表达，命中任意一个即得分）
+      const results = item.keywords.map(kw => {
+        const alternatives = kw.split('|').map(s => s.trim());
+        const hit = alternatives.some(alt => answer.includes(normalize(alt)));
+        return { display: alternatives[0], hit };
+      });
+
+      const hits = results.filter(r => r.hit).length;
+      const score = Math.round((hits / results.length) * 100);
+
+      // 得分展示
+      const scoreEl = document.getElementById('score-display');
+      scoreEl.textContent = score + '%';
+      scoreEl.className = 'font-headline-lg text-headline-lg ' +
+        (score >= 80 ? 'text-secondary' : score >= 50 ? 'text-tertiary' : 'text-error');
+
+      let comment;
+      if (score === 100) {
+        comment = '完美！所有关键表达都用上了。可以对照参考译文，看看有没有更地道的说法。';
+      } else if (score >= 67) {
+        comment = '翻译得不错！个别表达可以再优化，对照参考译文学习一下。';
+      } else if (score >= 34) {
+        comment = '基本意思有了，但关键表达还有欠缺，建议重点记忆标红的得分点。';
+      } else {
+        comment = '建议先学习本题的考点说明，再对照参考译文逐句模仿。';
+      }
+      document.getElementById('score-comment').textContent = comment;
+
+      // 得分点标签
+      document.getElementById('keyword-chips').innerHTML = results.map(r => `
+        <span class="keyword-chip ${r.hit ? 'hit' : 'miss'}">
+          <span class="material-symbols-outlined" style="font-size: 16px;">${r.hit ? 'check' : 'close'}</span>
+          ${r.display}
+        </span>
+      `).join('');
+
+      // 参考译文 + 考点
+      document.getElementById('reference-english').textContent = item.english;
+      document.getElementById('note-content').textContent = item.note;
+
+      // 锁定输入框，展示结果
+      document.getElementById('translation-input').disabled = true;
+      document.getElementById('input-hint').textContent = '此题已批改，点击 Next Sentence 继续';
+      document.getElementById('result-section').classList.remove('hidden');
+      document.getElementById('result-section').scrollIntoView({ behavior: 'smooth' });
+
+      // 保存记录
+      const history = api.addRecord('translation', {
+        itemId: item.id,
+        level: item.level,
+        category: item.category,
+        score,
+        date: new Date().toISOString()
+      });
+      document.getElementById('translate-progress').textContent =
+        `${history.length}/${translationData.items.length + translationData.passages.length}`;
+
+      showToast(`批改完成！得分: ${score}%`, score >= 67 ? 'success' : 'info');
+    }
+
+    // 跳过本题
+    function skipItem() {
+      showToast('已跳过，可以稍后再回来练习', 'info');
+      nextItem();
+    }
+
+    // 下一题
+    function nextItem() {
+      stopReading();
+      if (currentIndex < currentList.length - 1) {
+        currentIndex++;
+        loadItem();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        // 全部完成
+        const history = api.getRecords('translation');
+        const recent = history.slice(-currentList.length);
+        const avg = recent.length
+          ? Math.round(recent.reduce((s, h) => s + h.score, 0) / recent.length) : 0;
+        showToast(`本轮练习完成！平均得分 ${avg}%`, 'success');
+        currentIndex = 0;
+        loadItem();
+      }
+    }
+
+    // 朗读参考译文
+    function readReference() {
+      if (!('speechSynthesis' in window)) {
+        showToast('当前浏览器不支持语音朗读', 'error');
+        return;
+      }
+      stopReading();
+      const u = new SpeechSynthesisUtterance(currentList[currentIndex].english);
+      u.lang = 'en-US';
+      u.rate = 0.9;
+      speechSynthesis.speak(u);
+    }
+
+    function stopReading() {
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+    }
+
+    // 我的记录
+    function showMyRecords() {
+      const history = api.getRecords('translation');
+      if (history.length === 0) {
+        showToast('还没有练习记录，先做几题吧！', 'info');
+        return;
+      }
+      const avg = Math.round(history.reduce((s, h) => s + h.score, 0) / history.length);
+      const best = Math.max(...history.map(h => h.score));
+      showToast(`共练习 ${history.length} 题，平均 ${avg}%，最高 ${best}%`, 'success');
+    }
+  </script>
+
+</body>
+</html>

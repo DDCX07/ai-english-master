@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - Reading Comprehension</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff", "tertiary": "#784b00", "on-error": "#ffffff",
+            "primary-container": "#2563eb", "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655", "primary": "#004ac6",
+            "secondary": "#006c49", "primary-fixed": "#dbe1ff",
+            "outline": "#737686", "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc", "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff", "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700", "on-surface": "#191c20",
+            "tertiary-container": "#996100", "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f", "on-background": "#191c20",
+            "inverse-on-surface": "#eff1f3", "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00", "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133", "error-container": "#ffdad6",
+            "background": "#f7f9fb", "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff", "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd", "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236", "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d", "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb", "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db", "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8", "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a", "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px", "stack-lg": "32px", "stack-sm": "8px",
+            "margin-desktop": "40px", "container-max": "1280px",
+            "margin-mobile": "16px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"],
+            "body-lg": ["Inter"], "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* 阅读文本高亮样式 */
+    .reading-text {
+      line-height: 1.8;
+    }
+
+    .reading-text p {
+      margin-bottom: 1rem;
+      text-indent: 2em;
+    }
+
+    /* 关键句圈画（错题定位）：琥珀色圈画笔效果 */
+    .key-sentence {
+      background-color: rgba(245, 158, 11, 0.18);
+      border-bottom: 2px solid #f59e0b;
+      border-radius: 2px;
+      padding: 0 2px;
+    }
+
+    html.dark-mode .key-sentence {
+      background-color: rgba(245, 158, 11, 0.22);
+      border-bottom-color: #ffb95f;
+    }
+
+    /* 选项样式 */
+    .quiz-option {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .quiz-option:hover {
+      border-color: var(--ai-primary, #004ac6);
+      background-color: rgba(0, 74, 198, 0.05);
+    }
+
+    .quiz-option.selected {
+      border-color: var(--ai-primary, #004ac6);
+      background-color: rgba(0, 74, 198, 0.1);
+    }
+
+    .quiz-option.correct {
+      border-color: var(--ai-secondary, #006c49);
+      background-color: rgba(0, 108, 73, 0.1);
+    }
+
+    .quiz-option.incorrect {
+      border-color: var(--ai-error, #ba1a1a);
+      background-color: rgba(186, 26, 26, 0.1);
+    }
+
+    /* 回顾模式下选项不可点 */
+    .quiz-option.locked {
+      cursor: default;
+    }
+
+    .quiz-option.locked:hover {
+      border-color: var(--ai-outline-variant, #c3c6d7);
+    }
+
+    /* 计时器样式 */
+    .timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+  
+    /* ========== 划线功能样式 ========== */
+    #highlight-toolbar {
+      display: none;
+      position: absolute;
+      background: #ffffff;
+      border: 1px solid #c3c6d7;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      padding: 6px 10px;
+      z-index: 100;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    html.dark-mode #highlight-toolbar {
+      background: #2d3133;
+      border-color: #434655;
+    }
+    /* 取色弹窗：锚定在"划线模式"按钮上方 */
+    #highlight-color-picker {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 0;
+      background: #ffffff;
+      border: 1px solid #c3c6d7;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      padding: 10px 12px;
+      z-index: 110;
+      white-space: nowrap;
+    }
+    #highlight-color-picker.open { display: block; }
+    html.dark-mode #highlight-color-picker { background: #2d3133; border-color: #434655; }
+    #highlight-color-picker .picker-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #434655;
+    }
+    #highlight-color-picker .picker-hint {
+      font-size: 12px;
+      color: #737686;
+      margin-top: 6px;
+    }
+    html.dark-mode #highlight-color-picker .picker-title { color: #b9c0cf; }
+    html.dark-mode #highlight-color-picker .picker-hint { color: #8a94a6; }
+    .color-btn {
+      display: inline-block;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid #c3c6d7;
+      margin: 8px 4px 0;
+      cursor: pointer;
+      vertical-align: middle;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .color-btn:hover { transform: scale(1.15); }
+    .color-btn.active {
+      border-color: #004ac6;
+      transform: scale(1.15);
+      box-shadow: 0 0 0 2px rgba(0, 74, 198, 0.25);
+    }
+    /* 确认条上的当前颜色指示点 */
+    #highlight-toolbar .color-dot {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 1px #c3c6d7;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    #highlight-toolbar .confirm-btn {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      background: #004ac6;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #highlight-toolbar .confirm-btn:hover { background: #2563eb; }
+    html.dark-mode #highlight-toolbar .confirm-btn { background: #2563eb; }
+    html.dark-mode #highlight-toolbar .confirm-btn:hover { background: #3b82f6; }
+    /* 划线列表面板"清空全部" */
+    #highlight-panel-clear {
+      border: none;
+      background: transparent;
+      color: #ba1a1a;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 12px;
+    }
+    #highlight-panel-clear:hover { text-decoration: underline; }
+    html.dark-mode #highlight-panel-clear { color: #ff8a80; }
+    .hl-yellow { background-color: rgba(255, 235, 59, 0.35); border-bottom: 2px solid #fdd835; border-radius: 2px; padding: 1px 2px; }
+    .hl-green  { background-color: rgba(102, 187, 106, 0.3); border-bottom: 2px solid #66bb6a; border-radius: 2px; padding: 1px 2px; }
+    .hl-blue   { background-color: rgba(66, 165, 245, 0.25); border-bottom: 2px solid #42a5f5; border-radius: 2px; padding: 1px 2px; }
+    .hl-pink   { background-color: rgba(236, 64, 122, 0.25); border-bottom: 2px solid #ec407a; border-radius: 2px; padding: 1px 2px; }
+    .hl-orange { background-color: rgba(255, 167, 38, 0.3); border-bottom: 2px solid #ffa726; border-radius: 2px; padding: 1px 2px; }
+    html.dark-mode .hl-yellow { background-color: rgba(255, 235, 59, 0.25); }
+    html.dark-mode .hl-green  { background-color: rgba(102, 187, 106, 0.2); }
+    html.dark-mode .hl-blue   { background-color: rgba(66, 165, 245, 0.2); }
+    html.dark-mode .hl-pink   { background-color: rgba(236, 64, 122, 0.2); }
+    html.dark-mode .hl-orange { background-color: rgba(255, 167, 38, 0.2); }
+    .reading-text.mark-mode ::selection { background: rgba(0, 74, 198, 0.3); }
+    .ai-icon-btn.highlight-active { color: #004ac6; }
+
+    /* 划线工具：中文胶囊按钮（Material Icons 加载失败时文字也不会溢出） */
+    .hl-tool-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 2.5rem;
+      padding: 0 1rem;
+      border-radius: 9999px;
+      border: 1px solid var(--ai-outline-variant, #c3c6d7);
+      background: var(--ai-surface-container-lowest, #ffffff);
+      color: var(--ai-on-surface-variant, #434655);
+      font-size: 0.875rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .hl-tool-btn:hover {
+      color: var(--ai-primary, #004ac6);
+      border-color: var(--ai-primary, #004ac6);
+      background: rgba(0, 74, 198, 0.06);
+    }
+    .hl-tool-btn.highlight-active {
+      color: #ffffff;
+      background: var(--ai-primary, #004ac6);
+      border-color: var(--ai-primary, #004ac6);
+      box-shadow: 0 2px 8px rgba(0, 74, 198, 0.3);
+    }
+    html.dark-mode .hl-tool-btn {
+      background: var(--ai-surface-container-lowest, #1b1e24);
+      border-color: #4a4d56;
+      color: #e3e5e8;
+    }
+    html.dark-mode .hl-tool-btn:hover {
+      color: var(--ai-inverse-primary, #b4c5ff);
+      border-color: var(--ai-inverse-primary, #b4c5ff);
+      background: rgba(180, 197, 255, 0.08);
+    }
+    html.dark-mode .hl-tool-btn.highlight-active {
+      color: #ffffff;
+      background: var(--ai-primary-container, #2563eb);
+      border-color: var(--ai-primary-container, #2563eb);
+    }
+    #highlight-panel {
+      display: none;
+      position: fixed;
+      right: 0;
+      top: 60px;
+      width: 340px;
+      max-height: calc(100vh - 80px);
+      background: #ffffff;
+      border-left: 1px solid #c3c6d7;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.08);
+      z-index: 90;
+      flex-direction: column;
+    }
+    html.dark-mode #highlight-panel {
+      background: #1a1d23;
+      border-color: #434655;
+    }
+    #highlight-panel.open { display: flex; }
+    #highlight-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #c3c6d7;
+      background: #f7f9fb;
+    }
+    html.dark-mode #highlight-panel-header {
+      background: #2d3133;
+      border-color: #434655;
+    }
+    #highlight-panel-header h3 { margin: 0; font-size: 14px; font-weight: 600; color: #191c20; }
+    html.dark-mode #highlight-panel-header h3 { color: #eff1f3; }
+    #highlight-panel-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #434655;
+      padding: 0 4px;
+    }
+    #highlight-panel-body { flex: 1; overflow-y: auto; padding: 12px 16px; }
+    #highlight-panel-empty {
+      text-align: center;
+      color: #737686;
+      font-size: 13px;
+      padding: 32px 0;
+    }
+    .highlight-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      border-left: 4px solid;
+      position: relative;
+    }
+    .highlight-item.hl-yellow { border-left-color: #fdd835; background: rgba(255,235,59,0.06); }
+    .highlight-item.hl-green  { border-left-color: #66bb6a; background: rgba(102,187,106,0.06); }
+    .highlight-item.hl-blue   { border-left-color: #42a5f5; background: rgba(66,165,245,0.06); }
+    .highlight-item.hl-pink   { border-left-color: #ec407a; background: rgba(236,64,122,0.06); }
+    .highlight-item.hl-orange { border-left-color: #ffa726; background: rgba(255,167,38,0.06); }
+    .highlight-item-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #191c20;
+      margin-bottom: 4px;
+    }
+    html.dark-mode .highlight-item-text { color: #eff1f3; }
+    .highlight-item-meta {
+      font-size: 11px;
+      color: #737686;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .highlight-item-delete {
+      cursor: pointer;
+      color: #ba1a1a;
+      font-size: 12px;
+    }
+    .highlight-item-delete:hover { text-decoration: underline; }
+    #highlight-stats {
+      padding: 8px 16px;
+      border-top: 1px solid #c3c6d7;
+      font-size: 11px;
+      color: #737686;
+      text-align: center;
+    }
+    html.dark-mode #highlight-stats { border-top-color: #434655; }
+
+</style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- 侧边栏导航 -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">CET-6 Prep Mode</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list"></ul>
+    </div>
+
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary hidden md:block">
+          Reading Comprehension
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2" id="timer-wrap" style="display:none;">
+          <span class="material-symbols-outlined text-outline">timer</span>
+          <span class="timer text-primary" id="reading-timer">08:00</span>
+        </div>
+        <button class="ai-button ai-button--secondary" onclick="submitAnswers()" id="submit-btn" style="display:none;">
+          Submit Answers
+        </button>
+      </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto w-full">
+
+      <!-- ==================== 列表视图 ==================== -->
+      <section id="list-view">
+        <!-- 级别筛选 -->
+        <div class="flex flex-wrap items-center gap-2 mb-stack-md">
+          <span class="text-label-sm text-outline">级别:</span>
+          <button class="ai-button ai-button--text" data-diff="all" onclick="setDifficultyFilter('all', this)">全部</button>
+          <button class="ai-button ai-button--text" data-diff="CET-4" onclick="setDifficultyFilter('CET-4', this)">CET-4</button>
+          <button class="ai-button ai-button--text" data-diff="CET-6" onclick="setDifficultyFilter('CET-6', this)">CET-6</button>
+          <span class="text-label-sm text-outline ml-2" id="article-count"></span>
+        </div>
+
+        <!-- 真题分组（JS 控制显隐） -->
+        <h3 class="font-title-md text-title-md text-on-surface mb-stack-md mt-stack-lg flex items-center gap-2" id="group-real-title" style="display:none;">
+          <span class="material-symbols-outlined text-tertiary">verified</span>历年真题
+          <span class="text-label-sm text-outline font-normal">按考试时间从新到旧</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-stack-lg" id="article-list-real"></div>
+
+        <h3 class="font-title-md text-title-md text-on-surface mb-stack-md mt-stack-lg flex items-center gap-2" id="group-sim-title" style="display:none;">
+          <span class="material-symbols-outlined text-outline">edit_note</span>模拟练习
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-stack-lg" id="article-list-sim"></div>
+      </section>
+
+      <!-- ==================== 练习/回顾视图 ==================== -->
+      <section id="practice-view" class="hidden">
+
+        <!-- 顶部：返回 + 篇章导航 -->
+        <div class="flex flex-wrap items-center justify-between gap-stack-md mb-stack-lg">
+          <button class="ai-button ai-button--text" onclick="backToList()">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <span>返回文章列表</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button class="ai-button ai-button--secondary" onclick="prevArticle()" title="上一篇">
+              <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <select id="article-select" class="ai-input" style="min-width:280px;" onchange="selectArticle(this.value)"></select>
+            <button class="ai-button ai-button--secondary" onclick="nextArticle()" title="下一篇">
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 练习回顾横幅（已练习文章显示） -->
+        <div id="review-banner" class="hidden bg-tertiary-fixed-dim/30 border border-tertiary/30 rounded-xl p-6 mb-stack-lg">
+          <div class="flex flex-wrap items-center justify-between gap-stack-md">
+            <div class="flex items-center gap-6">
+              <div class="text-center">
+                <p class="font-headline-lg text-headline-lg" id="review-score">0%</p>
+                <p class="text-label-sm text-outline">上次正确率</p>
+              </div>
+              <div>
+                <p class="text-body-md text-on-surface font-semibold" id="review-summary-text">—</p>
+                <p class="text-label-sm text-outline mt-1" id="review-date">—</p>
+                <p class="text-label-sm text-tertiary mt-1">原文中已用 <span class="key-sentence">琥珀色</span> 圈出错题关键句</p>
+              </div>
+            </div>
+            <button class="ai-button ai-button--primary" onclick="retryArticle()">
+              <span class="material-symbols-outlined">refresh</span><span>重新练习</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 文章阅读区域 -->
+        <section class="mb-stack-lg">
+          <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8">
+            <div class="flex items-center justify-between mb-stack-md">
+              <div>
+                <h3 class="font-title-md text-title-md text-on-surface mb-1">
+                  <span id="article-title"></span>
+                  <span class="ai-badge ai-badge--warning ml-2 align-middle" id="article-exam" style="display:none;"></span>
+                </h3>
+                <p class="text-label-sm text-outline">
+                  难度: <span class="text-secondary" id="article-difficulty"></span> |
+                  字数: <span id="word-count"></span> |
+                  建议时间: <span id="suggested-time"></span>
+                </p>
+              </div>
+              <div class="flex items-center gap-2" style="position:relative;">
+                <div id="highlight-color-picker">
+                  <p class="picker-title">① 选择划线颜色</p>
+                  <span class="color-btn active" data-color="yellow" style="background:#fdd835;" title="黄色"></span>
+                  <span class="color-btn" data-color="green" style="background:#66bb6a;" title="绿色"></span>
+                  <span class="color-btn" data-color="blue" style="background:#42a5f5;" title="蓝色"></span>
+                  <span class="color-btn" data-color="pink" style="background:#ec407a;" title="粉色"></span>
+                  <span class="color-btn" data-color="orange" style="background:#ffa726;" title="橙色"></span>
+                  <p class="picker-hint">② 在正文中划选句子，点「确认划线」生效</p>
+                </div>
+                <button class="hl-tool-btn" id="highlight-toggle-btn" onclick="toggleHighlightMode()" title="开启后选中文本即可划线">✏️ 划线模式</button>
+                <button class="hl-tool-btn" id="highlight-list-btn" onclick="toggleHighlightPanel()" title="查看本文所有划线">📋 划线列表</button>
+                <button class="ai-icon-btn" onclick="adjustFontSize(-1)" title="减小字号">
+                  <span class="material-symbols-outlined">text_decrease</span>
+                </button>
+                <button class="ai-icon-btn" onclick="adjustFontSize(1)" title="增大字号">
+                  <span class="material-symbols-outlined">text_increase</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="reading-text text-body-lg text-on-surface max-w-4xl" id="article-content"></div>
+            <!-- 浮动选词高亮工具栏 -->
+            <div id="highlight-toolbar">
+              <span class="color-dot" id="toolbar-color-dot" style="background:#fdd835;"></span>
+              <span class="confirm-btn" onclick="applyHighlight()">确认划线</span>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 题目区域 -->
+        <section>
+          <h2 class="font-title-md text-title-md text-on-surface mb-stack-md">Comprehension Questions</h2>
+          <div class="space-y-stack-md" id="quiz-container"></div>
+
+          <!-- 提交按钮（仅作答模式显示） -->
+          <div class="flex items-center justify-center gap-4 mt-stack-lg" id="quiz-actions">
+            <button class="ai-button ai-button--primary" onclick="submitAnswers()">
+              <span class="material-symbols-outlined">check</span>
+              <span>Submit Answers</span>
+            </button>
+            <button class="ai-button ai-button--secondary" onclick="showExplanation()">
+              <span class="material-symbols-outlined">lightbulb</span>
+              <span>Show Explanation</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 错因总结（提交后 / 回顾时显示） -->
+        <section id="review-section" class="hidden mt-stack-lg">
+          <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8">
+            <h2 class="font-title-md text-title-md text-on-surface mb-2 flex items-center gap-2">
+              <span class="material-symbols-outlined text-error">error_outline</span>错因总结
+            </h2>
+            <p class="text-label-sm text-outline mb-stack-md">对照原文琥珀色圈画句，回看每道错题的定位与同义替换</p>
+            <div id="review-list" class="flex flex-col gap-stack-md"></div>
+          </div>
+        </section>
+
+        <!-- 结果展示区域（默认隐藏） -->
+        <section id="result-section" class="hidden mt-stack-lg">
+          <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8">
+            <h2 class="font-title-md text-title-md text-on-surface mb-stack-md">Your Results</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-md">
+              <div class="text-center">
+                <p class="text-label-sm text-outline mb-1">正确率</p>
+                <p class="font-headline-lg text-headline-lg text-primary" id="score-percentage">0%</p>
+              </div>
+              <div class="text-center">
+                <p class="text-label-sm text-outline mb-1">正确题数</p>
+                <p class="font-headline-lg text-headline-lg text-secondary" id="correct-count">0/5</p>
+              </div>
+              <div class="text-center">
+                <p class="text-label-sm text-outline mb-1">用时</p>
+                <p class="font-headline-lg text-headline-lg text-tertiary" id="time-used">0:00</p>
+              </div>
+            </div>
+            <div class="flex justify-center gap-4">
+              <button class="ai-button ai-button--primary" onclick="retryArticle()">
+                <span class="material-symbols-outlined">refresh</span>
+                <span>Try Again</span>
+              </button>
+              <button class="ai-button ai-button--secondary" onclick="backToList()">
+                <span class="material-symbols-outlined">list</span>
+                <span>返回列表</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </section>
+
+    </main>
+
+    <!-- 划线列表面板 -->
+    <div id="highlight-panel">
+      <div id="highlight-panel-header">
+        <h3>我的划线 <span id="highlight-count" class="text-label-sm text-outline">(0)</span></h3>
+        <button id="highlight-panel-close" onclick="toggleHighlightPanel()">&#x2715;</button>
+      </div>
+      <div id="highlight-panel-body">
+        <div id="highlight-panel-empty">暂无划线，点击划线模式按钮开始标注</div>
+      </div>
+      <div id="highlight-stats">
+        <span id="highlight-stats-text">共 0 条划线</span>
+        <span id="highlight-panel-clear" onclick="clearAllHighlights()">清空全部</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/data/menu-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260830b"></script>
+  <script src="js/data/reading-data.js?v=20260830b"></script>
+
+  <script>
+    // ============ 状态 ============
+    let difficultyFilter = 'all';
+    let filteredReal = [];      // 真题（按考试时间从新到旧）
+    let filteredSim = [];       // 模拟题
+    let currentArticle = null;
+    let currentIndex = 0;
+    let userAnswers = {};
+    let checked = false;        // 当前题是否已批改（含回顾模式）
+    let reviewMode = false;     // 回顾模式：打开的是已练习文章
+    let timerInterval = null;
+    let timeRemaining = 480;
+    let fontSizeLevel = 0;
+
+    function currentList() { return filteredReal.concat(filteredSim); }
+
+    // ============ 初始化 ============
+    document.addEventListener('DOMContentLoaded', function () {
+      currentActivePage = 'reading';
+      renderMenu();
+
+      difficultyFilter = api.getPrepLevel();
+      document.querySelectorAll('[data-diff]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.diff === difficultyFilter);
+      });
+
+      document.addEventListener('prep-level-change', e => {
+        difficultyFilter = e.detail.level;
+        document.querySelectorAll('[data-diff]').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.diff === difficultyFilter);
+        });
+        renderList();
+      });
+
+      renderList();
+    });
+
+    // ============ 列表视图 ============
+
+    /** 从 exam 字段解析排序键："2025年6月真题（第2套）" → 202506 */
+    function examSortKey(exam) {
+      const m = /(\d{4})年(\d{1,2})月/.exec(exam || '');
+      return m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : 0;
+    }
+
+    /** 某文章最近一次练习记录（带 articleId 的新记录） */
+    function getPracticeRecord(articleId) {
+      const records = api.getRecords('reading').filter(r => r.articleId === articleId);
+      return records.length ? records[records.length - 1] : null;
+    }
+
+    function renderList() {
+      const all = readingData.articles.filter(a =>
+        difficultyFilter === 'all' || a.difficulty === difficultyFilter
+      );
+
+      // 真题优先排在模拟题前；真题组内按考试时间从新到旧
+      filteredReal = all.filter(a => a.exam)
+        .sort((a, b) => examSortKey(b.exam) - examSortKey(a.exam) || a.id - b.id);
+      filteredSim = all.filter(a => !a.exam);
+
+      renderListGroup('article-list-real', filteredReal, 'group-real-title');
+      renderListGroup('article-list-sim', filteredSim, 'group-sim-title');
+
+      document.getElementById('article-count').textContent =
+        `共 ${all.length} 篇（真题 ${filteredReal.length} · 模拟 ${filteredSim.length}）`;
+    }
+
+    function renderListGroup(containerId, list, titleId) {
+      const container = document.getElementById(containerId);
+      const title = document.getElementById(titleId);
+      title.style.display = list.length ? '' : 'none';
+      if (!list.length) { container.innerHTML = ''; return; }
+
+      container.innerHTML = list.map(article => {
+        const record = getPracticeRecord(article.id);
+        let statusBadge;
+        if (record) {
+          const color = record.percentage >= 80 ? 'secondary' : record.percentage >= 60 ? 'warning' : 'error';
+          statusBadge = `<span class="ai-badge ai-badge--${color}">已练习 · ${record.percentage}%</span>`;
+        } else {
+          statusBadge = '<span class="ai-badge" style="background:var(--ai-surface-container-high,#e6e8ea);color:var(--ai-on-surface-variant,#434655);">未练习</span>';
+        }
+        return `
+        <div class="ai-module-card group bg-surface-container-lowest rounded-xl p-6 border border-outline-variant hover:border-primary shadow-[0px_4px_12px_rgba(0,0,0,0.02)] hover:shadow-[0px_10px_25px_rgba(37,99,235,0.08)] transition-all cursor-pointer min-h-[150px] flex flex-col justify-between"
+             onclick="openArticle(${article.id})">
+          <div>
+            <div class="flex justify-between items-start gap-2 mb-2">
+              <h3 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors leading-7 flex-1">${article.title}</h3>
+              ${statusBadge}
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="ai-badge ai-badge--primary">${article.difficulty}</span>
+              ${article.exam ? `<span class="ai-badge ai-badge--warning">${article.exam}</span>` : ''}
+            </div>
+          </div>
+          <div class="flex items-center gap-4 mt-3 text-label-sm text-outline">
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">subject</span>
+              ${article.wordCount} 词
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">schedule</span>
+              ${article.suggestedTime} 分钟
+            </span>
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-sm">quiz</span>
+              ${article.questions.length} 题
+            </span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function setDifficultyFilter(diff, el) {
+      difficultyFilter = diff;
+      document.querySelectorAll('[data-diff]').forEach(btn => btn.classList.remove('active'));
+      if (el) el.classList.add('active');
+      renderList();
+    }
+
+    // ============ 进入 / 退出练习视图 ============
+
+    function openArticle(id) {
+      const list = currentList();
+      const idx = list.findIndex(a => a.id === id);
+      currentIndex = idx >= 0 ? idx : 0;
+      showPracticeView();
+      loadArticle();
+      window.scrollTo({ top: 0 });
+    }
+
+    function showPracticeView() {
+      document.getElementById('list-view').classList.add('hidden');
+      document.getElementById('practice-view').classList.remove('hidden');
+      document.getElementById('timer-wrap').style.display = '';
+      document.getElementById('submit-btn').style.display = '';
+      renderArticleSelect();
+    }
+
+    function backToList() {
+      stopTimer();
+      document.getElementById('practice-view').classList.add('hidden');
+      document.getElementById('list-view').classList.remove('hidden');
+      document.getElementById('timer-wrap').style.display = 'none';
+      document.getElementById('submit-btn').style.display = 'none';
+      renderList();   // 刷新练习状态徽章
+      window.scrollTo({ top: 0 });
+    }
+
+    function renderArticleSelect() {
+      document.getElementById('article-select').innerHTML = currentList().map(a =>
+        `<option value="${a.id}">${a.exam ? '【真题】' : '【模拟】'}${a.difficulty} · ${a.title}</option>`
+      ).join('');
+    }
+
+    function selectArticle(id) {
+      const idx = currentList().findIndex(a => a.id === parseInt(id, 10));
+      if (idx >= 0) {
+        currentIndex = idx;
+        loadArticle();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function prevArticle() { navigateArticle(-1); }
+    function nextArticle() { navigateArticle(1); }
+
+    function navigateArticle(dir) {
+      const target = currentIndex + dir;
+      if (target < 0) return showToast('已经是第一篇了', 'info');
+      if (target >= currentList().length) return showToast('已经是最后一篇了', 'info');
+      currentIndex = target;
+      loadArticle();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ============ 加载文章 ============
+
+    function loadArticle() {
+      currentArticle = currentList()[currentIndex];
+      const article = currentArticle;
+
+      document.getElementById('article-title').textContent = article.title;
+      const examBadge = document.getElementById('article-exam');
+      if (article.exam) {
+        examBadge.textContent = article.exam;
+        examBadge.style.display = '';
+      } else {
+        examBadge.style.display = 'none';
+      }
+      document.getElementById('article-difficulty').textContent = article.difficulty;
+      document.getElementById('word-count').textContent = article.wordCount;
+      document.getElementById('suggested-time').textContent = article.suggestedTime + '分钟';
+      document.getElementById('article-select').value = String(article.id);
+
+      // 清掉上一篇的痕迹
+      document.getElementById('result-section').classList.add('hidden');
+      document.getElementById('review-section').classList.add('hidden');
+      document.getElementById('review-banner').classList.add('hidden');
+
+      const record = getPracticeRecord(article.id);
+      if (record && record.answers) {
+        enterReviewMode(record);      // 已练习：错因总结 + 关键句圈画
+      } else {
+        startFreshQuiz();             // 未练习：正常做题
+      }
+    }
+
+    /** 未练习：全新作答 */
+    function startFreshQuiz() {
+      reviewMode = false;
+      checked = false;
+      userAnswers = {};
+
+      document.getElementById('article-content').innerHTML = currentArticle.content;
+      renderQuestions(currentArticle.questions, false);
+      document.getElementById('quiz-actions').style.display = '';
+
+      timeRemaining = currentArticle.suggestedTime * 60;
+      updateTimerDisplay();
+      startTimer();
+    }
+
+    /** 已练习：回顾模式 */
+    function enterReviewMode(record) {
+      reviewMode = true;
+      checked = true;
+      stopTimer();
+
+      const wrongIdx = [];
+      record.answers.forEach((ans, i) => {
+        if (ans !== currentArticle.questions[i].correctAnswer) wrongIdx.push(i);
+      });
+
+      // 横幅：上次成绩概览
+      document.getElementById('review-banner').classList.remove('hidden');
+      document.getElementById('review-score').textContent = record.percentage + '%';
+      document.getElementById('review-score').className =
+        'font-headline-lg text-headline-lg ' +
+        (record.percentage >= 80 ? 'text-secondary' : record.percentage >= 60 ? 'text-tertiary' : 'text-error');
+      document.getElementById('review-summary-text').textContent =
+        `上次答对 ${record.correctCount}/${record.total} 题` +
+        (wrongIdx.length ? `，错 ${wrongIdx.length} 题（第 ${wrongIdx.map(i => i + 1).join('、')} 题）` : '，全对！');
+      document.getElementById('review-date').textContent =
+        '练习时间：' + (record.date || '').replace('T', ' ').slice(0, 16);
+
+      // 原文：圈出错题关键句
+      document.getElementById('article-content').innerHTML =
+        highlightKeySentences(currentArticle.content, currentArticle.questions, wrongIdx);
+
+      // 题目：回填上次答案并标色，选项锁定
+      userAnswers = {};
+      record.answers.forEach((ans, i) => { userAnswers[i] = ans; });
+      renderQuestions(currentArticle.questions, true);
+      document.getElementById('quiz-actions').style.display = 'none';
+
+      // 错因总结
+      renderReviewSummary(wrongIdx);
+    }
+
+    // ============ 关键句圈画 ============
+
+    /** 从解析中提取英文引文（解析按"定位+同义替换"写法引用了原文原句） */
+    function extractKeyPhrases(explanation) {
+      const phrases = [];
+      const re = /[''‘’]([A-Za-z][^''‘’]{12,240})[''‘’]/g;
+      let m;
+      while ((m = re.exec(explanation || '')) !== null) {
+        const phrase = m[1].trim();
+        const letters = (phrase.match(/[A-Za-z]/g) || []).length;
+        if (phrase.length >= 14 && letters > phrase.length * 0.6) {
+          phrases.push(phrase);
+        }
+      }
+      return phrases;
+    }
+
+    /** 把错题定位句在原文 HTML 中圈出（每次都从原始 content 重新替换，避免嵌套标记） */
+    function highlightKeySentences(contentHtml, questions, wrongIdx) {
+      let html = contentHtml;
+      wrongIdx.forEach(i => {
+        extractKeyPhrases(questions[i].explanation).forEach(phrase => {
+          const pattern = phrase
+            .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            .replace(/\s+/g, '\\s+');   // 空白弹性匹配（HTML 里可能有换行缩进）
+          const re = new RegExp('(?!<[^>]*>)(' + pattern + ')(?![^<]*>)', 'gi');
+          html = html.replace(re, '<span class="key-sentence">$1</span>');
+        });
+      });
+      return html;
+    }
+
+    // ============ 题目渲染 ============
+
+    /** locked = 回顾模式：显示上次答案与解析，选项不可点 */
+    function renderQuestions(questions, locked) {
+      const container = document.getElementById('quiz-container');
+      container.innerHTML = questions.map((q, index) => {
+        const prev = locked ? userAnswers[index] : undefined;
+        const optClass = (optIndex) => {
+          if (!locked) return '';
+          if (optIndex === q.correctAnswer) return ' correct';
+          if (prev !== undefined && optIndex === prev && prev !== q.correctAnswer) return ' incorrect';
+          return '';
+        };
+        return `
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6" id="question-${index}">
+          <div class="flex items-start gap-3 mb-stack-md">
+            <span class="ai-badge ai-badge--primary">Q${index + 1}</span>
+            <p class="text-body-lg text-on-surface flex-1">${q.question}</p>
+          </div>
+          <div class="space-y-sm">
+            ${q.options.map((option, optIndex) => `
+              <label class="quiz-option flex items-center gap-3 p-4 rounded-lg border border-outline-variant ${locked ? 'locked' : ''}${optClass(optIndex)}"
+                     id="option-${index}-${optIndex}"
+                     ${locked ? '' : `onclick="selectOption(${index}, ${optIndex})"`}>
+                <input type="radio" name="question-${index}" value="${optIndex}" class="ai-checkbox"
+                       ${locked ? 'disabled' : ''} ${prev !== undefined && prev === optIndex ? 'checked' : ''}/>
+                <span class="text-body-md text-on-surface">${String.fromCharCode(65 + optIndex)}. ${option}</span>
+              </label>
+            `).join('')}
+          </div>
+          <div class="mt-stack-md ${locked ? '' : 'hidden'}" id="explanation-${index}">
+            <div class="bg-surface-container-high rounded-lg p-4">
+              <p class="text-label-sm text-outline mb-1">答案解析</p>
+              <p class="text-body-md text-on-surface-variant">${q.explanation}</p>
+              <p class="text-body-md text-secondary mt-2">
+                正确答案: ${String.fromCharCode(65 + q.correctAnswer)}
+              </p>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function selectOption(questionIndex, optionIndex) {
+      if (checked) return;
+      userAnswers[questionIndex] = optionIndex;
+
+      const options = document.querySelectorAll(`[id^="option-${questionIndex}-"]`);
+      options.forEach((opt, idx) => {
+        opt.classList.remove('selected');
+        if (idx === optionIndex) {
+          opt.classList.add('selected');
+          opt.querySelector('input').checked = true;
+        }
+      });
+    }
+
+    // ============ 提交与批改 ============
+
+    function submitAnswers() {
+      if (checked) return;
+      const questions = currentArticle.questions;
+      const answered = Object.keys(userAnswers).length;
+      if (answered === 0) {
+        showToast('请先完成题目再提交！', 'error');
+        return;
+      }
+      if (answered < questions.length &&
+          !confirm(`还有 ${questions.length - answered} 题未作答，确定提交吗？`)) {
+        return;
+      }
+
+      stopTimer();
+      checked = true;
+
+      let correctCount = 0;
+      const wrongIdx = [];
+
+      questions.forEach((q, index) => {
+        const userAnswer = userAnswers[index];
+        const optionElement = document.getElementById(`option-${index}-${userAnswer}`);
+        const explanationElement = document.getElementById(`explanation-${index}`);
+
+        if (userAnswer === q.correctAnswer) {
+          correctCount++;
+          if (optionElement) optionElement.classList.add('correct');
+        } else {
+          wrongIdx.push(index);
+          if (optionElement) optionElement.classList.add('incorrect');
+          const correctOption = document.getElementById(`option-${index}-${q.correctAnswer}`);
+          if (correctOption) correctOption.classList.add('correct');
+        }
+        if (explanationElement) explanationElement.classList.remove('hidden');
+      });
+
+      // 原文圈出错题关键句
+      document.getElementById('article-content').innerHTML =
+        highlightKeySentences(currentArticle.content, questions, wrongIdx);
+
+      // 结果卡片
+      const percentage = Math.round((correctCount / questions.length) * 100);
+      document.getElementById('score-percentage').textContent = percentage + '%';
+      document.getElementById('correct-count').textContent = `${correctCount}/${questions.length}`;
+
+      const timeUsed = currentArticle.suggestedTime * 60 - timeRemaining;
+      const minutes = Math.floor(Math.max(0, timeUsed) / 60);
+      const seconds = Math.max(0, timeUsed) % 60;
+      document.getElementById('time-used').textContent =
+        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+      document.getElementById('result-section').classList.remove('hidden');
+      document.getElementById('quiz-actions').style.display = 'none';
+
+      // 错因总结
+      renderReviewSummary(wrongIdx);
+
+      // 保存记录（含每题作答，供回顾模式使用）
+      api.addRecord('reading', {
+        articleId: currentArticle.id,
+        title: currentArticle.title,
+        level: currentArticle.difficulty,
+        exam: currentArticle.exam || '',
+        percentage,
+        correctCount,
+        total: questions.length,
+        answers: questions.map((q, i) => userAnswers[i] == null ? -1 : userAnswers[i]),
+        timeUsed,
+        date: new Date().toISOString()
+      });
+
+      document.getElementById('result-section').scrollIntoView({ behavior: 'smooth' });
+      showToast(`提交成功！正确率: ${percentage}%`, percentage >= 60 ? 'success' : 'info');
+    }
+
+    /** 错因总结列表（提交后与回顾模式共用） */
+    function renderReviewSummary(wrongIdx) {
+      const section = document.getElementById('review-section');
+      const list = document.getElementById('review-list');
+      if (!wrongIdx.length) {
+        list.innerHTML = '<p class="text-body-md text-secondary">🎉 全部答对，没有错题！可对照原文学习出题点。</p>';
+      } else {
+        list.innerHTML = wrongIdx.map(i => {
+          const q = currentArticle.questions[i];
+          const yours = userAnswers[i];
+          const yourText = (yours == null || yours < 0) ? '未作答' :
+            String.fromCharCode(65 + yours) + '. ' + q.options[yours];
+          const correctText = String.fromCharCode(65 + q.correctAnswer) + '. ' + q.options[q.correctAnswer];
+          return `
+          <div class="border border-outline-variant rounded-lg p-4">
+            <div class="flex items-start gap-3 mb-2">
+              <span class="ai-badge ai-badge--error">Q${i + 1}</span>
+              <p class="text-body-md text-on-surface flex-1">${q.question}</p>
+            </div>
+            <p class="text-body-md text-error">你的答案：${yourText}</p>
+            <p class="text-body-md text-secondary mt-1">正确答案：${correctText}</p>
+            <div class="bg-surface-container-high rounded-lg p-3 mt-2">
+              <p class="text-label-sm text-outline mb-1">错因（定位 + 同义替换）</p>
+              <p class="text-body-md text-on-surface-variant">${q.explanation}</p>
+            </div>
+          </div>`;
+        }).join('');
+      }
+      section.classList.remove('hidden');
+    }
+
+    function showExplanation() {
+      currentArticle.questions.forEach((q, index) => {
+        const el = document.getElementById(`explanation-${index}`);
+        if (el) el.classList.remove('hidden');
+      });
+      showToast('已显示所有题目解析', 'info');
+    }
+
+    /** 重新练习当前文章 */
+    function retryArticle() {
+      document.getElementById('review-banner').classList.add('hidden');
+      document.getElementById('review-section').classList.add('hidden');
+      startFreshQuiz();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ============ 计时器 ============
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(Math.max(0, timeRemaining) / 60);
+      const seconds = Math.max(0, timeRemaining) % 60;
+      document.getElementById('reading-timer').textContent =
+        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          showToast('时间到！请提交答案。', 'warning');
+        }
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    // ============ 字号 ============
+
+
+    /** HTML 转义，防止 XSS */
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ============ 划线功能 ============
+    let highlightMode = false;
+    let selectedColor = 'yellow';
+    // 弹出确认条时抓拍的选区（点"确认"时浏览器可能已清空实时选区，必须用副本）
+    let pendingRange = null;
+    let pendingText = '';
+    let currentHighlights = [];
+
+    /** 颜色名称 -> CSS class 映射 */
+    const COLOR_MAP = {
+      yellow: 'hl-yellow',
+      green: 'hl-green',
+      blue: 'hl-blue',
+      pink: 'hl-pink',
+      orange: 'hl-orange'
+    };
+
+    /** 颜色名称 -> 显示名 */
+    const COLOR_LABELS = {
+      yellow: '黄色', green: '绿色', blue: '蓝色', pink: '粉色', orange: '橙色'
+    };
+
+    /** 从 localStorage 加载当前文章的划线 */
+    function loadHighlights() {
+      if (!currentArticle) return;
+      const key = 'highlights_' + currentArticle.id;
+      try {
+        currentHighlights = JSON.parse(localStorage.getItem(key)) || [];
+      } catch (e) {
+        currentHighlights = [];
+      }
+      applyHighlightsToContent();
+      renderHighlightPanel();
+    }
+
+    /** 保存当前文章的划线到 localStorage */
+    function saveHighlights() {
+      if (!currentArticle) return;
+      const key = 'highlights_' + currentArticle.id;
+      localStorage.setItem(key, JSON.stringify(currentHighlights));
+      renderHighlightPanel();
+    }
+
+    /** 将划线标记应用到文章 HTML 内容 */
+    function applyHighlightsToContent(keepBase) {
+      const contentEl = document.getElementById('article-content');
+      if (!contentEl) return;
+
+      // 获取原始 HTML（不含划线标记）
+      let originalContent = contentEl.dataset.originalContent;
+      if (!originalContent) {
+        // 如果尚未设置，使用当前内容作为原始内容
+        originalContent = contentEl.innerHTML;
+        contentEl.dataset.originalContent = originalContent;
+      }
+
+      // keepBase = 在当前内容上叠加划线（回顾模式/解析页的原文已含错题关键句标记，不能重置）
+      if (!keepBase) contentEl.innerHTML = originalContent;
+
+      // 逐条应用划线
+      let html = keepBase ? contentEl.innerHTML : originalContent;
+      currentHighlights.forEach(hl => {
+        const cls = COLOR_MAP[hl.color] || 'hl-yellow';
+        const text = hl.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp('(' + text + ')', 'gi');
+        html = html.replace(re, '<span class="' + cls + '" data-highlight-id="' + hl.id + '">$1</span>');
+      });
+
+      contentEl.innerHTML = html;
+    }
+
+    /** 渲染划线列表面板 */
+    function renderHighlightPanel() {
+      const body = document.getElementById('highlight-panel-body');
+      const countEl = document.getElementById('highlight-count');
+      const statsEl = document.getElementById('highlight-stats');
+
+      countEl.textContent = '(' + currentHighlights.length + ')';
+      const statsText = document.getElementById('highlight-stats-text');
+      if (statsText) statsText.textContent = '共 ' + currentHighlights.length + ' 条划线';
+
+      if (!currentHighlights.length) {
+        body.innerHTML = '<div id="highlight-panel-empty">暂无划线，点击划线模式按钮开始标注</div>';
+        return;
+      }
+
+      body.innerHTML = currentHighlights.map(hl => {
+        const cls = COLOR_MAP[hl.color] || 'hl-yellow';
+        const timeStr = hl.time || '';
+        return `
+        <div class="highlight-item ${cls}" id="hl-item-${hl.id}">
+          <div class="highlight-item-text">${escapeHtml(hl.text)}</div>
+          <div class="highlight-item-meta">
+            <span>${COLOR_LABELS[hl.color] || '黄色'} · ${timeStr}</span>
+            <span class="highlight-item-delete" onclick="deleteHighlight('${hl.id}')">删除</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    /** 切换划线模式 */
+    function toggleHighlightMode() {
+      highlightMode = !highlightMode;
+      const contentEl = document.getElementById('article-content');
+      const btn = document.getElementById('highlight-toggle-btn');
+
+      const picker = document.getElementById('highlight-color-picker');
+      if (highlightMode) {
+        contentEl.classList.add('mark-mode');
+        btn.classList.add('highlight-active');
+        if (picker) picker.classList.add('open');       // 弹出取色面板
+        showToast('划线模式已开启：选中文本即可高亮标注', 'info');
+      } else {
+        contentEl.classList.remove('mark-mode');
+        btn.classList.remove('highlight-active');
+        if (picker) picker.classList.remove('open');
+        hideToolbar();
+      }
+    }
+
+    /** 切换划线列表面板 */
+    function toggleHighlightPanel() {
+      const panel = document.getElementById('highlight-panel');
+      panel.classList.toggle('open');
+    }
+
+    /** 处理文本选择 */
+    document.addEventListener('mouseup', function(e) {
+      if (!highlightMode) return;
+
+      // 点在确认条/取色面板上：这不是重新划选，绝不能隐藏工具栏（否则会清掉待确认的选区）
+      const toolbar = document.getElementById('highlight-toolbar');
+      const picker = document.getElementById('highlight-color-picker');
+      if ((toolbar && toolbar.contains(e.target)) || (picker && picker.contains(e.target))) {
+        return;
+      }
+
+      const contentEl = document.getElementById('article-content');
+      if (!contentEl || !contentEl.contains(e.target)) {
+        hideToolbar();
+        return;
+      }
+
+      const selection = window.getSelection();
+      const text = selection.toString().trim();
+
+      if (text.length < 2) {
+        hideToolbar();
+        return;
+      }
+
+      // 检查选区是否在 article-content 内
+      let node = selection.anchorNode;
+      let inContent = false;
+      while (node) {
+        if (node === contentEl) {
+          inContent = true;
+          break;
+        }
+        node = node.parentNode;
+      }
+
+      if (!inContent) {
+        hideToolbar();
+        return;
+      }
+
+      // 显示工具栏
+      showToolbar(e.clientX, e.clientY);
+    });
+
+    /** 显示工具栏 */
+    function showToolbar(x, y) {
+      const toolbar = document.getElementById('highlight-toolbar');
+      // 关键：此刻选区还在，先抓拍副本，点"确认"时用它
+      const sel = window.getSelection();
+      if (sel.rangeCount > 0) {
+        pendingRange = sel.getRangeAt(0).cloneRange();
+        pendingText = sel.toString().trim();
+      }
+      toolbar.style.display = 'block';
+      toolbar.style.left = Math.min(x, window.innerWidth - 180) + 'px';
+      toolbar.style.top = (y - 40) + 'px';
+    }
+
+    /** 隐藏工具栏 */
+    function hideToolbar() {
+      document.getElementById('highlight-toolbar').style.display = 'none';
+      pendingRange = null;
+      pendingText = '';
+    }
+
+    /** 把确认条上的颜色指示点同步成当前选中的颜色 */
+    function updateColorDot() {
+      const DOT_COLORS = { yellow: '#fdd835', green: '#66bb6a', blue: '#42a5f5', pink: '#ec407a', orange: '#ffa726' };
+      const dot = document.getElementById('toolbar-color-dot');
+      if (dot) dot.style.background = DOT_COLORS[selectedColor] || '#fdd835';
+    }
+
+    /** 对选中文本应用高亮 */
+    function applyHighlight() {
+      // 用弹出确认条时抓拍的选区副本（实时选区可能已被浏览器的 mousedown 清空）
+      const text = pendingText;
+      const range = pendingRange;
+
+      if (!range || text.length < 2) {
+        hideToolbar();
+        return;
+      }
+
+      const selection = window.getSelection();
+
+      // 创建高亮 span
+      const spanId = 'hl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      let span;
+
+      try {
+        span = document.createElement('span');
+        span.className = COLOR_MAP[selectedColor];
+        span.dataset.highlightId = spanId;
+        range.surroundContents(span);
+      } catch (e) {
+        // surroundContents 要求选区内容在同一元素内，处理跨元素选区
+        const fragment = range.extractContents();
+        span = document.createElement('span');
+        span.className = COLOR_MAP[selectedColor];
+        span.dataset.highlightId = spanId;
+        span.appendChild(fragment);
+        range.insertNode(span);
+      }
+
+      // 保存划线记录
+      const hl = {
+        id: spanId,
+        text: text,
+        color: selectedColor,
+        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+      };
+      currentHighlights.push(hl);
+      saveHighlights();
+
+      // 清除选区并隐藏工具栏
+      selection.removeAllRanges();
+      hideToolbar();
+      showToast('划线标注已保存', 'success');
+    }
+
+    /** 删除单条划线 */
+    function deleteHighlight(id) {
+      currentHighlights = currentHighlights.filter(h => h.id !== id);
+      saveHighlights();
+
+      // 从 DOM 中移除标记
+      const el = document.querySelector('[data-highlight-id="' + id + '"]');
+      if (el) {
+        const parent = el.parentNode;
+        parent.replaceChild(document.createTextNode(el.textContent), el);
+        parent.normalize();
+      }
+
+      showToast('划线已删除', 'info');
+    }
+
+    /** 清空所有划线 */
+    function clearAllHighlights() {
+      if (!confirm('确定要清空当前文章的所有划线吗？')) return;
+
+      currentHighlights = [];
+      saveHighlights();
+      applyHighlightsToContent();
+      hideToolbar();
+      showToast('已清空所有划线', 'info');
+    }
+
+    /** 颜色按钮选择 */
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('#highlight-color-picker .color-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('#highlight-color-picker .color-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          selectedColor = this.dataset.color;
+          updateColorDot();
+        });
+      });
+
+      // 点击其他地方隐藏工具栏
+      document.addEventListener('mousedown', function(e) {
+        // 在确认条/取色面板上按下时阻止默认行为，否则浏览器会清空文字选区，
+        // 导致点"确认划线"时选区已丢失
+        const toolbar = document.getElementById('highlight-toolbar');
+        const picker = document.getElementById('highlight-color-picker');
+        if ((toolbar && toolbar.contains(e.target)) || (picker && picker.contains(e.target))) {
+          e.preventDefault();
+          return;
+        }
+        if (toolbar.style.display === 'block' && !toolbar.contains(e.target)) {
+          // 不自动生效：只有点工具栏里的"确认划线"才应用
+          hideToolbar();
+        }
+      });
+    });
+
+    /** 回顾模式 / 提交解析 / 重新作答都会重写原文 HTML（叠加错题关键句或清空划线），
+     *  渲染完成后把当前文章的划线重新叠加上去（keepBase=true，保留关键句标记） */
+    ['enterReviewMode', 'submitAnswers', 'retryArticle'].forEach(fname => {
+      const orig = window[fname];
+      if (typeof orig === 'function') {
+        window[fname] = function (...args) {
+          const result = orig.apply(this, args);
+          if (currentHighlights.length) applyHighlightsToContent(true);
+          return result;
+        };
+      }
+    });
+
+    /** 重写 loadArticle 以在加载文章时恢复划线 */
+    const originalLoadArticle = window.loadArticle;
+    if (originalLoadArticle) {
+      window.loadArticle = function() {
+        originalLoadArticle();
+        // 延迟执行确保 DOM 已更新
+        setTimeout(() => {
+          const contentEl = document.getElementById('article-content');
+          if (contentEl) {
+            // 每次加载新文章时重置原始内容
+            contentEl.dataset.originalContent = contentEl.innerHTML;
+            loadHighlights();
+          }
+        }, 100);
+      };
+    }
+
+
+    function adjustFontSize(delta) {
+      fontSizeLevel = Math.max(-2, Math.min(2, fontSizeLevel + delta));
+      const sizes = ['16px', '18px', '20px', '22px', '24px'];
+      document.getElementById('article-content').style.fontSize = sizes[fontSizeLevel + 2];
+    }
+  </script>
+
+</body>
+</html>

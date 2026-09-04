@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - Dashboard</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff",
+            "tertiary": "#784b00",
+            "on-error": "#ffffff",
+            "primary-container": "#2563eb",
+            "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655",
+            "primary": "#004ac6",
+            "secondary": "#006c49",
+            "primary-fixed": "#dbe1ff",
+            "outline": "#737686",
+            "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc",
+            "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff",
+            "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700",
+            "on-surface": "#191c1e",
+            "tertiary-container": "#996100",
+            "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f",
+            "on-background": "#191c1e",
+            "inverse-on-surface": "#eff1f3",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00",
+            "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6",
+            "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133",
+            "error-container": "#ffdad6",
+            "background": "#f7f9fb",
+            "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff",
+            "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd",
+            "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236",
+            "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d",
+            "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb",
+            "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db",
+            "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8",
+            "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a",
+            "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px",
+            "stack-lg": "32px",
+            "stack-sm": "8px",
+            "margin-desktop": "40px",
+            "container-max": "1280px",
+            "margin-mobile": "16px",
+            "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"],
+            "title-md": ["Inter"],
+            "display-lg": ["Inter"],
+            "body-lg": ["Inter"],
+            "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"],
+            "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    /* Material Icons 基础样式 */
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- ============================
+    侧边栏导航组件
+    使用方法: 将 components/sidebar.html 的内容复制到这里
+  ============================ -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <!-- Logo区域 -->
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">CET-6 Prep Mode</p>
+    </div>
+
+    <!-- 菜单列表 -->
+    <div class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list">
+        <!-- 菜单项通过 JS 动态生成 -->
+      </ul>
+    </div>
+
+    <!-- 底部按钮和链接 -->
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+
+      <div class="mt-stack-md flex items-center gap-3 px-4">
+        <img alt="User Profile" class="ai-avatar" src="https://via.placeholder.com/40"/>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- ============================
+      顶部导航栏组件
+    ============================ -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary hidden md:block">
+          Dashboard
+        </h2>
+        <nav class="hidden lg:flex gap-6">
+          <a class="ai-nav-item ai-nav-item--active" href="#">Study Plan</a>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="relative hidden md:block">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+          <input class="ai-input ai-input--search" placeholder="Search..." type="text"/>
+        </div>
+        <img alt="User Profile" class="ai-avatar" src="https://via.placeholder.com/40"/>
+      </div>
+    </header>
+
+    <!-- 主要内容区域 -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto w-full">
+
+      <!-- ============================
+        备考模式选择
+      ============================ -->
+      <section class="mb-stack-lg">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6 flex flex-wrap items-center justify-between gap-stack-md">
+          <div class="flex items-center gap-3">
+            <div class="p-3 bg-primary/10 rounded-lg text-primary">
+              <span class="material-symbols-outlined">flag</span>
+            </div>
+            <div>
+              <h3 class="font-title-md text-title-md text-on-surface">我的备考目标</h3>
+              <p class="text-body-md text-on-surface-variant mt-1">选择备考级别后，阅读、写作、翻译等模块会优先展示对应级别的真题内容。</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="ai-button ai-button--secondary px-6" id="prep-btn-cet4" onclick="choosePrepLevel('CET-4')">备考四级 CET-4</button>
+            <button class="ai-button ai-button--primary px-6" id="prep-btn-cet6" onclick="choosePrepLevel('CET-6')">备考六级 CET-6</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================
+        统计卡片区域
+      ============================ -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
+        <!-- 学习天数卡片（纯统计展示，无边框不可点击） -->
+        <div class="ai-stat-card bg-surface-container-low rounded-xl p-6 cursor-default">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="p-2 bg-primary/10 rounded-lg text-primary">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+            </div>
+            <h3 class="font-title-md text-title-md text-on-surface-variant">Today's Streak</h3>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="font-headline-lg text-headline-lg text-on-surface font-black" id="streak-days">14</span>
+            <span class="font-label-sm text-label-sm text-outline">DAYS</span>
+          </div>
+          <div class="mt-4">
+            <div class="ai-progress-bar">
+              <div class="ai-progress-bar__fill ai-progress-bar__fill--tertiary" style="width: 70%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 累计单词卡片（纯统计展示，无边框不可点击） -->
+        <div class="ai-stat-card bg-surface-container-low rounded-xl p-6 cursor-default">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="p-2 bg-primary/10 rounded-lg text-primary">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+            </div>
+            <h3 class="font-title-md text-title-md text-on-surface-variant">Cumulative Words</h3>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="font-headline-lg text-headline-lg text-on-surface font-black" id="total-words">4,520</span>
+            <span class="font-label-sm text-label-sm text-outline">WORDS</span>
+          </div>
+          <div class="mt-4">
+            <div class="ai-progress-bar">
+              <div class="ai-progress-bar__fill ai-progress-bar__fill--secondary" style="width: 45%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 考试倒计时卡片（纯统计展示，无边框不可点击） -->
+        <div class="ai-stat-card bg-surface-container-low rounded-xl p-6 cursor-default relative overflow-hidden">
+          <div class="absolute -right-4 -top-4 opacity-5">
+            <span class="material-symbols-outlined text-[120px]">timer</span>
+          </div>
+          <div class="flex items-center gap-3 mb-2 relative z-10">
+            <div class="p-2 bg-primary/10 rounded-lg text-primary">
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+            </div>
+            <h3 class="font-title-md text-title-md text-on-surface-variant"><span>Exam Countdown</span> (<span id="countdown-level">CET-6</span>)</h3>
+          </div>
+          <div class="flex items-baseline gap-2 relative z-10">
+            <span class="font-headline-lg text-headline-lg text-error font-black" id="exam-countdown">42</span>
+            <span class="font-label-sm text-label-sm text-outline">DAYS LEFT</span>
+          </div>
+          <div class="mt-4 relative z-10">
+            <div class="ai-progress-bar">
+              <div class="ai-progress-bar__fill ai-progress-bar__fill--tertiary" style="width: 80%;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================
+        功能模块区域
+        【已隐藏】按需求暂时不向用户展示"核心模块"（听力/阅读/翻译入口）。
+        恢复显示：删掉下面 section 上的 style="display:none" 即可。
+      ============================ -->
+      <section class="mb-stack-lg" style="display:none;">
+        <h2 class="font-title-md text-title-md text-on-surface mb-stack-md">Core Modules</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+          <!-- 听力模块 -->
+          <div class="ai-module-card group bg-surface-container-lowest rounded-xl p-6 border border-outline-variant hover:border-primary shadow-[0px_4px_12px_rgba(0,0,0,0.02)] hover:shadow-[0px_10px_25px_rgba(37,99,235,0.08)] transition-all cursor-pointer min-h-[160px] flex flex-col justify-between"
+               onclick="window.location.href='listening.html'">
+            <div class="flex justify-between items-start">
+              <div class="p-3 bg-surface-container rounded-lg text-primary group-hover:bg-primary/10 transition-colors">
+                <span class="material-symbols-outlined text-[32px]">headset</span>
+              </div>
+              <span class="text-label-sm font-label-sm text-outline px-2 py-1 bg-surface-container-low rounded">听力训练</span>
+            </div>
+            <div class="mt-4">
+              <h3 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Listening Practice</h3>
+              <p class="text-body-md text-on-surface-variant mt-1 line-clamp-2">Daily dictation and comprehension exercises.</p>
+            </div>
+          </div>
+
+          <!-- 阅读模块 -->
+          <div class="ai-module-card group bg-surface-container-lowest rounded-xl p-6 border border-outline-variant hover:border-primary shadow-[0px_4px_12px_rgba(0,0,0,0.02)] hover:shadow-[0px_10px_25px_rgba(37,99,235,0.08)] transition-all cursor-pointer min-h-[160px] flex flex-col justify-between"
+               onclick="window.location.href='reading.html'">
+            <div class="flex justify-between items-start">
+              <div class="p-3 bg-surface-container rounded-lg text-primary group-hover:bg-primary/10 transition-colors">
+                <span class="material-symbols-outlined text-[32px]">article</span>
+              </div>
+              <span class="text-label-sm font-label-sm text-outline px-2 py-1 bg-surface-container-low rounded">阅读理解</span>
+            </div>
+            <div class="mt-4">
+              <h3 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Reading Comprehension</h3>
+              <p class="text-body-md text-on-surface-variant mt-1 line-clamp-2">Long-form articles and rapid reading tests.</p>
+            </div>
+          </div>
+
+          <!-- 翻译模块 -->
+          <div class="ai-module-card group bg-surface-container-lowest rounded-xl p-6 border border-outline-variant hover:border-primary shadow-[0px_4px_12px_rgba(0,0,0,0.02)] hover:shadow-[0px_10px_25px_rgba(37,99,235,0.08)] transition-all cursor-pointer min-h-[160px] flex flex-col justify-between"
+               onclick="window.location.href='translation.html'">
+            <div class="flex justify-between items-start">
+              <div class="p-3 bg-surface-container rounded-lg text-primary group-hover:bg-primary/10 transition-colors">
+                <span class="material-symbols-outlined text-[32px]">translate</span>
+              </div>
+              <span class="text-label-sm font-label-sm text-outline px-2 py-1 bg-surface-container-low rounded">智能翻译</span>
+            </div>
+            <div class="mt-4">
+              <h3 class="font-title-md text-title-md text-on-surface group-hover:text-primary transition-colors">Translation Practice</h3>
+              <p class="text-body-md text-on-surface-variant mt-1 line-clamp-2">Smart translation with AI feedback.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================
+        今日任务区域
+      ============================ -->
+      <section class="mb-stack-lg">
+        <div class="ai-task-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+          <div class="flex items-center justify-between mb-stack-md">
+            <div class="flex items-center gap-1">
+              <h3 class="font-title-md text-title-md text-on-surface">Today's Tasks</h3>
+              <!-- 编辑键：跳到设置页的"目标与进度"修改每日任务目标 -->
+              <button class="ai-icon-btn" style="width:32px;height:32px;"
+                      title="Edit goals" aria-label="Edit goals"
+                      onclick="window.location.href='setting.html#goals'">
+                <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
+              </button>
+            </div>
+            <span class="text-label-sm text-outline" id="task-progress">3/5 completed</span>
+          </div>
+
+          <ul class="flex flex-col gap-stack-sm" id="ai-task-list">
+            <!-- 任务项会通过JS动态生成 -->
+          </ul>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============================
+    JavaScript 文件引入
+  ============================ -->
+
+  <!-- 菜单配置数据 -->
+  <script src="js/data/menu-data.js"></script>
+
+  <!-- 工具函数 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260830b"></script>
+
+  <!-- 页面逻辑 -->
+  <script>
+    // 备考模式选择
+    function choosePrepLevel(level) {
+      api.setPrepLevel(level);
+    }
+
+    function refreshPrepUI() {
+      const level = api.getPrepLevel();
+      document.getElementById('prep-btn-cet4').className =
+        'ai-button px-6 ' + (level === 'CET-4' ? 'ai-button--primary' : 'ai-button--secondary');
+      document.getElementById('prep-btn-cet6').className =
+        'ai-button px-6 ' + (level === 'CET-6' ? 'ai-button--primary' : 'ai-button--secondary');
+      document.getElementById('countdown-level').textContent = level;
+    }
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+      // 渲染菜单
+      renderMenu();
+
+      // 备考模式按钮初始状态 + 监听全局切换
+      refreshPrepUI();
+      document.addEventListener('prep-level-change', refreshPrepUI);
+
+      // 全部统计来自统一数据层（api.js），不再使用写死的假数据
+      const stats = api.getStats();
+
+      // 更新统计数字
+      document.getElementById('streak-days').textContent = stats.streak;
+      document.getElementById('total-words').textContent = formatNumber(stats.vocab.total);
+
+      // 统计卡片进度条：连续打卡以 30 天为目标，词汇以六级大纲 5523 词为目标
+      document.querySelector('#streak-days').closest('.ai-stat-card')
+        .querySelector('.ai-progress-bar__fill').style.width =
+        Math.min(100, Math.round(stats.streak / 30 * 100)) + '%';
+      document.querySelector('#total-words').closest('.ai-stat-card')
+        .querySelector('.ai-progress-bar__fill').style.width =
+        Math.min(100, Math.round(stats.vocab.total / 5523 * 100)) + '%';
+
+      // 计算考试倒计时（两边都取本地零点，避免 UTC 解析 + ceil 导致多算一天）
+      const examDate = new Date(2026, 11, 18); // CET 考试日期（官方尚未公布确切日期，需核实）
+      const today = new Date();
+      const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const daysLeft = Math.round((examDate - todayMid) / (1000 * 60 * 60 * 24));
+      document.getElementById('exam-countdown').textContent = daysLeft;
+
+      // 今日任务：根据今天的真实学习记录自动判定完成状态
+      // 每日单词目标从设置页读取（默认 20）
+      const settings = storage.get('userSettings', {}) || {};
+      const wordGoal = settings.dailyWordGoal || 20;
+      const t = stats.today;
+      const tasks = [
+        { text: `背 ${wordGoal} 个新单词`, done: t.words >= wordGoal, progress: t.words + '/' + wordGoal },
+        { text: '做 10 道听力题', done: t.listeningQuestions >= 10, progress: t.listeningQuestions + '/10' },
+        { text: '完成 1 篇阅读理解', done: t.reading >= 1, progress: t.reading + '/1' },
+        { text: '写 1 篇短文', done: t.writing >= 1, progress: t.writing + '/1' },
+        { text: '练 10 句翻译', done: t.translation >= 10, progress: t.translation + '/10' }
+      ];
+
+      const taskList = document.getElementById('ai-task-list');
+      const completedCount = tasks.filter(task => task.done).length;
+
+      taskList.innerHTML = tasks.map(task => `
+        <li class="ai-task-item flex items-center justify-between">
+          <label class="flex items-center gap-3">
+            <input type="checkbox" class="ai-checkbox" ${task.done ? 'checked' : ''} disabled/>
+            <span class="text-body-md text-on-surface ${task.done ? 'line-through text-outline' : ''}">
+              ${task.text}
+            </span>
+          </label>
+          <span class="font-label-sm text-label-sm ${task.done ? 'text-secondary' : 'text-outline'}">
+            ${task.done ? '✓ ' + task.progress : task.progress}
+          </span>
+        </li>
+      `).join('');
+
+      // 更新任务进度显示
+      document.getElementById('task-progress').textContent =
+        `${completedCount}/${tasks.length} completed`;
+    });
+  </script>
+
+</body>
+</html>

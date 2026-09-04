@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英语自学网站数据库设计 - DeepSeek</title>
+<style>
+body {
+    font-family: "WenQuanYi Zen Hei", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.8;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #333;
+    background: #fff;
+}
+.page {
+    page-break-after: always;
+    border-bottom: 2px dashed #ccc;
+    padding-bottom: 30px;
+    margin-bottom: 20px;
+}
+.page:last-child {
+    border-bottom: none;
+}
+.page::before {
+    content: "— 第 25 页 —";
+    display: block;
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+</style>
+</head>
+<body>
+<div class="page">
+这是我英语自学网站的几乎所有页面，现在我正在使用supabase进行后端数
+据列表的设计，你觉得我应该设计哪些种类的数据列表，可以尽量详尽的为我
+设计，我自身是新手，那你可以在设计的同时向我用简明的语言解释这些表格
+存储的数据类型
+已思考（用时 28 秒）
+仔细分析用户的需求：
+1. 提供的素材：用户上传了多张网页截图，展示了一个英语自学网站（AI English Master）的几乎所有
+页面：仪表盘（Dashboard）、词汇学习（Vocabulary）、听力练习（Listening）、阅读理解
+（Reading）、写作练习（Writing）、翻译练习（Translation）、语法练习（Grammar）、口语练习
+（Speaking）、模拟考试（Mock Exam）、设置（Settings，包含个人资料、偏好、目标与进度、关
+于）。
+2. 核心任务：用户正在使用 Supabase 进行后端数据列表（数据表）的设计。用户希望我帮忙设计数据
+表的种类，尽量详尽。
+3. 用户背景：用户自述是新手（"我自身是新手"）。
+4. 附加要求：在设计的同量，用简明的语言解释这些表格存储的数据类型（"用简明的语言向我解释这些
+表格存储的数据类型"）。
+分析网站功能与数据需求（拆解各个页面）：
+全局/通用部分：
+用户系统（登录、注册、头像、昵称、账号、密码） -> profiles 表。
+设置（备考目标CET-4/CET-6、每日提醒、字体大小、夜间模式、每日目标时长/数量） -> 关联到
+用户表或者单独的用户设置表。
+打卡/学习统计（今日打卡天数、累计单词、备考倒计时、学习时长） -> 统计数据表。
+词汇模块 (Vocabulary)：
+单词本体（包含英文、中文释义、音标、例句） -> vocabulary_words 表。
+用户学习状态（今日新词、已掌握、待复习、正确率、认识/不认识/太简单） ->
+user_vocabulary_progress 表。
+听力模块 (Listening)：
+真题/练习题材料（题目名称、时长、题数、真题/模拟标签、CET级别） -> listening_materials
+表。
+用户做题记录（完成练习数、正确率、总用时） -> user_listening_records 表。
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+1/25
+</div>
+<div class="page">
+阅读模块 (Reading)：
+文章材料（标题、字数、时长、题目数、真题/模拟标签、CET级别、文章正文） ->
+reading_materials 表。
+用户做题记录（阅读进度、正确率、时长） -> user_reading_records 表。
+写作模块 (Writing)：
+题目（题干、要求、字数限制、时间限制、真题/模拟标签、CET级别） -> writing_topics 表。
+用户写作记录（用户写的作文、草稿、得分/反馈、提交时间） -> user_writing_records 表。
+翻译模块 (Translation)：
+题目（题目句、参考译文、所属级别/话题） -> translation_topics 表。
+用户翻译记录（用户翻译的句子、正确/错误、用时） -> user_translation_records 表。
+语法模块 (Grammar)：
+语法知识点（时态、虚拟语气等，名称、定义、例句、级别） -> grammar_topics 表。
+用户学习记录（学习进度、练习） -> user_grammar_progress 表（可选，或者并入记录表）。
+口语模块 (Speaking)：
+口语题目（句子、提示、场景分类） -> speaking_topics 表。
+用户口语练习记录（录音文件路径/URL、评分、朗读次数） -> user_speaking_records 表。
+模拟考试模块 (Mock Exam)：
+试卷（时长、题数、及格线、试卷类型） -> mock_exams 表。
+试卷中的题目（题干、选项、正确答案） -> mock_exam_questions 表。
+用户考试记录（得分、用时、提交时间、答题详情） -> user_exam_records 表 和
+user_exam_answers 表。
+构思数据结构（Supabase 表设计）：
+由于用户是新手，尽量不要过度设计复杂的外键关系，但一定要指出主要关联。
+表 1: profiles (用户表/拓展信息表)
+关联 Supabase Auth ( auth.users )。
+字段：id (uuid), username (text), avatar_url (text), target_level (text, e.g., 'CET-4', 'CET-6'),
+daily_goal_words (int), daily_goal_minutes (int), study_reminder_time (time), dark_mode
+(boolean), created_at, updated_at.
+表 2: user_stats (用户统计表 - 用于仪表盘) 或者直接计算。建议做一个统计表方便快速读取。
+字段：user_id, current_streak_days (int), total_study_hours (float), total_words_learned (int),
+updated_at.
+表 3: vocabulary_words (词汇库表)
+字段：id, word (text), phonetic (text), meaning (text), example_sentence (text), level (text
+'CET-4', 'CET-6').
+表 4: user_vocabulary_progress (用户词汇学习进度表)
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+2/25
+</div>
+<div class="page">
+字段：id, user_id, word_id (FK), status (text 'new', 'learning', 'mastered', 'review'), is_known
+(boolean), correct_count (int), last_reviewed_at (timestamp).
+表 5: listening_materials (听力材料表)
+字段：id, title (text), description (text), duration (int seconds), question_count (int), level
+(text), type (text 'real' or 'mock'), audio_url (text).
+表 6: user_listening_records (听力练习记录表)
+字段：id, user_id, material_id (FK), correct_count (int), total_count (int), duration_spent (int),
+completed_at (timestamp).
+表 7: reading_materials (阅读材料表)
+字段：id, title (text), content (text), word_count (int), question_count (int), time_limit (int),
+level (text), type (text 'real' or 'mock').
+表 8: user_reading_records (阅读练习记录表)
+字段：id, user_id, material_id (FK), correct_count (int), total_count (int), duration_spent (int),
+completed_at (timestamp).
+表 9: writing_topics (写作题目表)
+字段：id, topic_text (text), requirement (text), word_limit (int), time_limit (int), level (text).
+表 10: user_writing_records (写作记录表)
+字段：id, user_id, topic_id (FK), user_content (text), ai_feedback (text), score (int),
+submitted_at (timestamp).
+表 11: translation_topics (翻译题目表)
+字段：id, chinese_text (text), english_reference (text), topic_tag (text), level (text).
+表 12: user_translation_records (翻译记录表)
+字段：id, user_id, topic_id (FK), user_translation (text), is_correct (boolean), duration_spent
+(int), completed_at (timestamp).
+表 13: grammar_topics (语法知识点表)
+字段：id, title (text), description (text), examples (text[] or jsonb), level (text).
+表 14: user_grammar_progress (用户语法进度表)
+字段：id, user_id, topic_id (FK), completed (boolean), last_studied_at (timestamp).
+表 15: speaking_topics (口语题目表)
+字段：id, sentence (text), tips (text), topic_tag (text), level (text).
+表 16: user_speaking_records (口语练习记录表)
+字段：id, user_id, topic_id (FK), audio_url (text), duration_spent (int), completed_at
+(timestamp).
+表 17 & 18: mock_exams (模拟试卷表) 和 mock_exam_questions (试卷题目表)
+mock_exams : id, title, duration (int), question_count (int), pass_mark (int), level (text).
+mock_exam_questions : id, exam_id (FK), question_text, option_a, option_b, option_c, option_d,
+correct_answer, explanation.
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+3/25
+</div>
+<div class="page">
+表 19: user_exam_records (模拟考试记录表)
+字段：id, user_id, exam_id (FK), score (int), duration_spent (int), submitted_at (timestamp).
+规划回复结构：
+1. 引言与鼓励：确认用户是新手，表示理解，表示这个网站功能很完善，因此后端数据表设计需要细致。
+2. 核心概念解释：简单解释什么是主键、外键、一对一/一对多关系。
+3. 分类讲解数据表设计：
+按照用户提到的模块（用户、词汇、听力、阅读、写作、翻译、语法、口语、模拟考试、仪表盘/设
+置）进行归类。每一个类别下解释需要哪些表，表格名称，表格中重要的字段，以及为什么需要这
+些字段（简单直白的解释）。强调“前缀 user_”的表是用来记录用户个人数据的。
+4. 给新手的 Supabase 建议：
+利用 Supabase Auth 的 User ID。
+设置 Row Level Security (RLS) 的策略（安全）。
+关于 SQL 语句的提示。
+5. 总结：鼓励用户，建议先从最基础的用户表和词汇表开始搭建。
+优化语言使其简洁易懂：
+避免生硬的数据库术语，比如“规范化”、“范式”、“复合主键”，改用“主要用来存什么”、“这是用来记录
+你的状态的”、“比如……”等表述。
+确保明确指明哪个表是用作“题库/材料库”（静态内容，大家共用的），哪个表是用来记录“用户自己的
+学习记录”（动态内容，每人不一样）。
+对照用户提供的截图：
+仪表盘：打卡天数、累计单词、倒计时、核心模块、今日任务。对应统计表（如 user_daily_stats 或
+临时计算，或者基于 user_vocabulary_progress 和 user_exam_records 聚合查询）。为了新手方
+便，可以建议一个简单的 user_stats 表。
+词汇：今日新词、已掌握、待复习、正确率，以及单词卡片操作（不认、认识、太简单）。这些状态直
+接对应 user_vocabulary_progress 表。
+听力/阅读/写作/翻译/口语/语法/模拟考：均有列表和详细记录。对应各自的材料表和用户记录表。
+起草回复（用中文拟定内容）：
+开头：看了你的截图，你的网站功能非常全（词汇、听力、阅读、写作、翻译、语法、口语、模拟考、
+打卡等），这是很棒的实战项目！虽然你是新手，但不要怕，后端表设计就是“用表格把东西存起来”。
+下面我为你梳理了具体的表结构设计。
+第一部分：核心主体表（也就是基础数据，大家共用）。
+第二部分：用户行为表（也就是用户个人的数据，重点）。
+第三部分：设置相关表。
+为了让内容更清晰，我直接将表结构写出来，并给出说明。
+修正和补充：
+考虑到用户是新手，可以把表拆得更细一些，但也要告诉他不一定一次性全建好，比如先建好用户、词
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+4/25
+</div>
+<div class="page">
+你好！作为一个新手，能把网站界面做得这么完整已经非常棒了。既然你正在使用 Supabase，
+它本质上就是一个“云端数据库”。你可以把这些表格想象成一个个“Excel 表”，每个 Sheet 对应
+汇、做题记录，后面再添加。
+Mermaid 图示的考量：对于新手，直接用文字表格描述可能比 Mermaid 图更好理解，因为不是所有的人
+都能看懂复杂的 ER 图。可以用 Markdown 表格来展示字段。
+回复内容撰写中...
+(思考各表的字段定义)
+profiles ：对应截图中的“设置”。
+vocabulary_words ：单词库。
+user_vocabulary_progress ：记录“slippery”这个词你认识不认识。
+listening_materials ：“2026年6月六级真题”。
+user_listening_records ：“你听了这次真题，错了2道题”。
+writing_topics ：具体的写作题目。
+user_writing_records ：“你写的作文内容”。
+mock_exams ：模拟卷属性。
+mock_exam_questions ：卷子里的具体题目。
+user_exam_records ：“考试得分、用时”。
+最终整合输出结构：
+1. 开篇：鼓励与设定框架。
+2. 第一部分：核心概念提醒（id, user_id外键）。
+3. 第二部分：常用“材料/题库表”（静态表）。列出表名和字段解释。
+4. 第三部分：用户专属的“学习记录表”（动态表）。也是最重要的。
+5. 第四部分：设置与统计（特化表）。
+6. 第五部分：给新手的Supabase避坑指南（如RLS, Auth）。
+7. 结尾：给出行动建议。
+这个方案非常符合用户的需求：全面、详尽、通俗易懂，且使用了全新的视角（结合用户实际截图内容进
+行说明）。
+再次审视用户需求：
+“你觉得我应该设计哪些种类的数据列表” -> 已覆盖所有模块。
+“尽量详尽” -> 列表很长，且每个表都解释了字段。
+“我是新手” -> 用了简单直白的语言，避免了复杂的数据库术语。
+“用简明的语言解释这些表格存储的数据类型” -> 每个表格字段都加上了“解释”。
+微调名称：确保命名规范，虽然不用太正式，但要有 SQL 的习惯。例如用 snake_case (下划线命名法)。
+给新手的建议：在 Supabase 中，可以利用 SQL Editor 直接运行建表语句，用起来很方便。
+开始输出。
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+5/25
+</div>
+<div class="page">
+一个功能模块。
+这些表格大致分为两类：“静态题库存”（大家共用，比如单词库、真题库）和“用户动态记录
+表”（只针对某个用户个人的学习数据）。所有表格都会有一个 id (主键，唯一标识) 和
+user_id (关联到用户的身份，通常用 Supabase Auth 生成的一串 UUID)。
+为了让你更好理解，我按照你的网站截图模块为你详细列举：
+1. 用户与个人设置类（对应 设置 页面）
+profiles (用户信息表)：存储用户的基础资料。
+id (关联 Auth 的用户ID), username (昵称，如“dcx”), avatar_url (头像), created_at
+(注册时间,如2026-08-17)。
+user_settings (用户偏好设置表)：存储“学习偏好”和“目标与进度”页面的内容。
+user_id (外键，指向用户), target_level (备考目标：如 CET-4 或 CET-6),
+daily_goal_words (每日目标新词数，如20), daily_goal_minutes (各科目标练习时长),
+reminder_time (提醒时间，如20:00), dark_mode (夜间模式开关), font_size (字体大
+小)。
+2. 仪表盘与打卡统计类（对应 仪表盘 页面）
+user_stats (用户统计数据表)：为了快速展示“今日打卡6天”、“累计单词21个”、“倒计时”等
+数据。
+user_id , current_streak_days (连续打卡天数), total_words_learned (累计学习单词
+数), total_study_hours (总学习时长/小时)。
+3. 词汇学习类（对应 词汇 页面）
+vocabulary_words (单词题库表)：存放所有单词的静态数据，大家共用。
+word (单词拼写，如 slippery), phonetic (音标), meaning (中文释义), example (例句),
+level (CET-4/CET-6标签)。
+user_vocabulary_progress (用户单词进度表)：记录你今天背了哪个词，状态如何（认识、
+不认识、太简单）。
+user_id , word_id (关联单词表), status (状态：new/learning/mastered),
+correct_answers (正确率统计), last_reviewed_at (最近复习时间)。
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+6/25
+</div>
+<div class="page">
+4. 听力与阅读类（对应 听力、阅读 页面）
+listening_materials (听力题库表)：静态数据，比如“2026年6月六级真题”。
+title (题目名称), level (CET级别), type (真题/模拟), duration (总时长/秒),
+audio_url (音频文件地址), question_count (题目总数)。
+user_listening_records (用户听力记录表)：记录你听了哪套题，对了多少。
+user_id , material_id (关联试卷), correct_count , total_count , duration_spent (实
+际用时), completed_at (完成时间)。
+reading_materials (阅读题库表)：存储文章内容。
+title (文章标题), content (文章正文), word_count (字数), time_limit (规定时间)，
+type (真题/模拟)。
+user_reading_records (用户阅读记录表)：同理，记录阅读做题情况。
+5. 写作、翻译、语法、口语类（对应对应页面）
+writing_topics (写作题目表)：题目、要求、字数限制。
+user_writing_records (用户写作记录表)：存入你写的具体作文（user_content ）、AI评语
+（ai_feedback ）、得分（score ）。
+translation_topics (翻译题目表)：中文原句、参考译文、所属话题（生活与社会等）。
+user_translation_records (用户翻译记录表)：记录你输入的译文、是否正确、用时。
+grammar_topics (语法知识点表)：语法名称（如时态）、定义、例句、适用级别。
+user_grammar_progress (用户语法进度表)：记录你看过/学会了哪些语法点。
+speaking_topics (口语题目表)：句子文本、发音提示（如重音提醒）、场景标签。
+user_speaking_records (用户口语记录表)：包含你录音的音频文件地址（audio_url ），口
+语AI评分，练习时间。
+6. 模拟考试类（对应 模拟考试 页面）
+这里需要两个表：
+mock_exams (模拟试卷表)：存试卷的“外部信息”，如考试时长40分钟、及格线60%、题目总
+数30。
+mock_exam_questions (试卷题目详情表)：存具体的每一道题。
+exam_id (关联试卷), question_text (题干), option_a , option_b , option_c , option_d
+(四个选项), correct_answer (正确答案), explanation (答案解析)。
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+7/25
+</div>
+<div class="page">
+user_exam_records (用户模拟考试记录表)：记录你考了多少分，总共用时多久，这就是你成
+绩单的依据。
+💡 给新手的小建议（非常重要）：
+1. 先别急着全建好：建议你先建好 profiles 、vocabulary_words 和
+user_vocabulary_progress 这三个表，先把背单词功能跑通，再慢慢加阅读、听力等模块，
+这样不容易乱。
+2. 利用好 Supabase 的 Auth：user_id 这个字段，可以直接绑定 Supabase 的 auth.users
+表，这样你不需要自己做注册和密码验证。
+3. 开启 RLS (Row Level Security)：Supabase 非常强调安全。一定要在你的 user_xxx 记录
+表里开启行级安全策略，确保“只能看到和修改自己的数据”，不然别人通过API就能改你的成
+绩了。
+如果你在具体建某个表时遇到了 SQL 语句报错，或者不知道怎么在 Supabase 里创建外键，随
+时可以再来问我，祝你开发顺利！
+那我该怎么使用supabase呢
+已思考（用时 13 秒）
+1. 分析用户的输入：
+图片： 用户上传了两张 Supabase 控制台截图。
+图1：Database > Table Editor （数据库 > 表格编辑器），显示 schema auth （模式：认证）
+和 auth 表（identities 、mfa_challenges 、mfa_factors ）。这些都是 Supabase 内置的认
+证相关表。
+图2：Project Overview （项目概览），显示项目名称 ai-english-master 、主机名（
+...supabase.co ）、区域（ap-southeast-1 ，新加坡，对中文用户可能延迟较低）、Compute
+（Nano）、RAM（45%，接近满？虽然是小项目，但可能因为初始设置）、数据库大小
+（13%）。显示的连接方式：Direct 、Transaction pooler （事务池化器）、Session pooler
+（会话池化器）。
+文本问题： "那我该怎么使用supabase呢"
+背景： 该用户是新手，正在构建一个英语学习应用。用户之前曾询问过设计数据表，并收到了详细
+的答复，现在询问如何实际使用 Supabase 的界面/工具。
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+8/25
+</div>
+<div class="page">
+2. 确定目标： 为一位新手提供一份清晰、可操作的分步指南，讲解如何使用 Supabase 启动和运行他们
+的英语学习应用，特别是从他们当前的界面（认证模式、概览）开始。
+3. 确定核心步骤：
+步骤 1：创建数据表（SQL编辑器） - 如何实际创建他们之前问到的表。强调 SQL Editor （SQL编
+辑器）而不是手动点击，或者解释清楚 Table Editor （表格编辑器）。
+步骤 2：处理认证/用户（他们当前所处的模式） - 解释内置的 auth 模式，以及如何添加自定义的
+public 表（如 profiles ）来存储用户名和偏好设置。注意 user_id 需要链接到 auth.users.id
+。
+步骤 3：设置行级安全（RLS） - 对于新手来说至关重要！ 解释如何保护 user_* 表，以便他们只
+能看到自己的数据。
+步骤 4：从 Supabase 获取API密钥（连接） - 解释如何从 Settings > API 获取 URL 和
+anon key ，以便前端（React、Vue 等）可以连接。
+步骤 5：存储文件（Storage） - 简要提到 Storage （存储），因为他们有音频文件、图片（听力
+音频、用户录音），并且需要存储它们。
+步骤 6：连接前端 - 简要介绍如何使用 supabase-js 。
+4. 起草回复结构（对新手友好，循序渐进）：
+引言： 确认他们当前的位置（Authentication 和 Database 模式），并安抚他们，说明
+Supabase 的 UI 可能会让人眼花缭乱。
+Step 1: 您的数据库（创建自定义表）
+解释 auth 模式（内置，不要碰它）。
+解释 public 模式（这是他们创建 profiles 、vocabulary_words 等表的地方）。
+操作：告诉他们进入 SQL Editor 并粘贴 SQL 代码。
+Step 2: 设置 User Profile 表（连接他们的应用）
+展示如何创建 profiles 表。
+代码示例：
+create table public.profiles (id uuid references auth.users not null primary key,
+username text, ...);
+（解释外键）。
+Step 3: 开启 RLS (Row Level Security) - 警示！
+为什么要开启？如果不开启，任何人都能查看和编辑数据。
+如何开启：在 Table Editor 中点击表，找到 RLS 切换开关并开启。
+添加策略（Policy）：使用 SQL alter table ... enable row level security; 和
+create policy ... for select using (auth.uid() = user_id);
+Step 4: 获取项目 API 密钥（连接您的代码）
+位置：Settings (左下角) -> API 。
+需要：Project URL 和 anon public key。（解释 service_role 是服务器端用的，不要暴露在
+客户端）。
+Step 5: 在代码中初始化
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+9/25
+</div>
+<div class="page">
+看到你现在的界面了。你现在正处于 Supabase 的 Table Editor 页面，而且停留在 auth 模式
+（这是 Supabase 自带的用户认证表，比如你看到的 identities, mfa_factors 等，请千万不要
+随意修改这些表，因为它们是系统自动管理的）。
+另外，你的区域选在新加坡（ap-southeast-1 ），对于国内访问速度相对较快，这个选择没问
+题。
+作为新手，使用 Supabase 正确搭建你的英语学习网站，请按照以下五步操作：
+第一步：创建你的专属数据表（去写 SQL）
+不要手动在 Table Editor 里一个个点着建表，新建表格很麻烦。请点击左侧边栏的 SQL
+Editor。
+1. 在 SQL Editor 里，你可以直接写代码来创建表（因为之前我跟你讲过需要哪些表，这是最快
+的方法）。注意： 你所有的业务表（如 profiles , vocabulary_words 等）都应该建在
+public 这个模式下（默认模式）。
+给一个基本的 JS 代码片段。
+Step 6: 测试和迭代
+使用 Table Editor 添加一个测试行。
+使用 Realtime 或 Logs 查看变化。
+总结/鼓励： 提醒用户，他们之前询问过表结构，现在只需在一个地方输入即可。
+5. 完善语气和清晰度：
+语气：鼓励性、分析性、逐步指导。
+语言：中文（根据提示语言）。
+术语：解释诸如 auth.uid() 、public 、RLS 和 anon key 等术语。
+6. 起草过程中的自我修正/审查：
+修正： 不要简单地说“点击那个按钮”，而是提供确切的按钮名称，因为用户提供的是截图。例如，
+“在左侧边栏找到 SQL Editor”（我看到他们当前在 Table Editor 选项卡中，就在 SQL Editor 上
+方）。等等，他们的截图显示的是 SQL Editor 和 Table Editor 侧边栏都可见，用户当前在
+Table Editor ，也在 Authentication 下的 Table Editor 中。
+重点： 由于用户是在 auth 模式下查看的，他们可能感到困惑。我应该明确告诉他们去下拉菜单，
+选择 public 模式（或创建 public 模式下的表），或者直接使用 SQL 编辑器。
+处理连接字符串： 他们的截图显示了一个用于直接连接的 URL。确保区分数据库连接（用于后端、
+迁移）和 API URL（用于前端、Supabase JS 客户端）。
+7. 最终输出生成： （与提供的好回复相匹配）。
+分解为：第一步（创建表）、第二步（RLS - 安全策略）、第三步（连接前端）、第四步（存储音
+频）。
+使用清晰、加粗的格式来突出重要步骤。
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+10/25
+</div>
+<div class="page">
+2. 举个例子，把你之前想好的用户信息表代码复制进去，点击“Run”：
+3. 你可以在左侧下拉菜单，把 auth 切换成 public ，就能看到你刚建好的表了。
+第二步：开启行级安全（RLS）—— 这一步最重要！
+新手最容易犯的错误就是忘了开安全策略，导致所有用户的成绩、词汇记录互相都能看到。
+1. 在 Table Editor 里选中你的表（比如 user_vocabulary_progress ）。
+2. 看到右上角有一个 RLS (Row Level Security) 的开关，开启它。
+3. 开启后还需要添加“策略”（Policy），点击“New Policy”，选择“Create a policy” -> “For
+full customization”。写入以下逻辑：
+（注意：user_id 字段要在建表时加上，且类型是 uuid ，对应 auth.users.id ）
+sql
+create table public.profiles (
+  id uuid references auth.users not null primary key, -- 关联系统自带注册用户
+  username text,
+  avatar_url text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+sql
+-- 允许用户看到自己的数据
+create policy "用户可看自己的数据" 
+on public.user_vocabulary_progress 
+for select 
+using ( auth.uid() = user_id );
+-- 允许用户插入自己的数据
+create policy "用户可插入自己的数据" 
+on public.user_vocabulary_progress 
+for insert 
+with check ( auth.uid() = user_id );
+-- 允许用户更新自己的数据
+create policy "用户可更新自己的数据" 
+on public.user_vocabulary_progress 
+for update 
+using ( auth.uid() = user_id );
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+11/25
+</div>
+<div class="page">
+第三步：获取 API 密钥，连接你的前端代码
+你的前端（React/Vue等）需要密码才能访问数据库。
+1. 点击左下角的 Settings（设置）。
+2. 找到 API 这一栏。
+3. 记下两个东西：
+Project URL（项目地址）
+anon public key（这是公开的匿名密钥，用于前端）
+特别注意： service_role 密钥拥有最高权限，绝对不要放进前端代码里，只放在后端服
+务器中使用！
+4. 在你的前端代码中安装依赖：npm install @supabase/supabase-js
+5. 初始化：
+第四步：处理你的音频和图片文件（存储）
+你的听力和口语板块需要存放音频（如真题听力MP3）和用户录制的音频。
+在左侧点击 Storage（存储）。
+1. 点击“New Bucket”创建一个名为 audio 的公开存储桶。
+2. 上传你的听力音频文件。
+3. 前端获取音频时，可以通过代码生成 public 链接，或者直接使用 Supabase 提供的 CDN
+URL，这样你的网页就能播放了。
+第五步：在控制台实时查看数据（调试）
+当你在自己的网站里注册了一个新账号，背了几个单词后，回到这个 Table Editor 页面，你会
+看到你的数据自动增加了一行。你可以直接在表格上修改数据，来测试你的前端显示效果。
+新手避坑指南：
+如果你在操作时不小心把表删了，没关系，去 SQL Editor 重新 Run 一下建表代码就行。
+javascript
+import { createClient } from '@supabase/supabase-js'
+const supabase = createClient('你的Project URL', '你的anon public key')
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+12/25
+</div>
+<div class="page">
+如果你想做“每日打卡”或“连续学习6天”这样的功能，需要在前端代码里写逻辑，比如在你打
+开网站的时候，向 user_stats 表发起一次 select 或 update ，计算日期差，这属于业务逻
+辑，Supabase 只能帮你存数据，不能帮你算数。
+先按这个步骤建好第一张 profiles 表，并开启 RLS，试试在本地跑通连接。如果遇到报错，
+随时把报错截图发给我，我帮你看看！
+本回答由 AI 生成，内容仅供参考，请仔细甄别
+怎么开rsl？
+已思考（用时 9 秒）
+1. 分析用户的输入：
+图片： 用户当前位于 Supabase 的 Table Editor 页面。左上角下拉框显示的是 schema auth ，控
+制台中显示一个警告：“Viewing protected schema. The auth schema is managed by
+Supabase and is read-only through the dashboard.”
+文本： “怎么开rsl？”
+用户的意图： 用户理解开启 RLS（行级安全）是必要的，但在当前屏幕上不知道如何操作，或者被
+卡在 auth schema 中，无法访问自己的 public 表（这些表还不存在，或者用户尚未创建）。
+纠正/澄清： 用户之前问过“怎么使用supabase”。我之前建议开启 RLS，用户现在试图在 Table
+Editor 中找到这个开关。但是，用户当前处于 auth 模式，它受到保护且只读。用户可以查看它但
+不能修改任何内容。他需要切换到 public 模式。
+2. 确定正确的步骤：
+第一步：切换模式/模式。 用户需要点击左上角的下拉菜单（目前显示为 auth ），并将其改为
+public 。
+第二步：创建一张表（如果他们还没有创建的话）。 现在 public 模式可能只有
+schema_migrations 之类的表，或者为空。新手需要先创建一张表，才能看到 RLS 开关。
+第三步：找到 RLS 开关。 一旦选中 public 模式下的特定表，右侧面板的右上角或顶部会显示
+“RLS”切换开关。
+第四步：开启 RLS。 将开关切换为“开启”。
+第五步：添加策略。 仅开启 RLS 而不添加策略会阻止所有访问，包括用户自己的访问。用户需要创
+建策略来允许访问（select , insert , update , delete ）。使用“New Policy”按钮。
+第六步（替代方案）：使用 SQL。 既然是新手，使用 SQL 有时更简单（且用户之前已经看到
+过）。用户可以在 SQL Editor 中运行：
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+13/25
+</div>
+<div class="page">
+别急，你走错地方了。看你的截图，你当前左上角选中的是 schema auth ，这是 Supabase 受
+保护的底层系统表（用来存注册用户、密码等），这个模式是只读的，无法修改，也开不了
+RLS。
+你的业务表（比如 Profiles、单词表等）应该建在 public 模式下。你需要按照以下步骤操作：
+第一步：切换到 public 模式
+点击左上角的下拉菜单（现在显示的是 schema auth ），把它切换成 public 。
+第七步（替代方案）：Supabase 仪表盘 UI 路径。 这可能是最简单的方式。指导他们逐步点击。
+3. 起草回复结构（用中文，友好清晰，适合新手）：
+直接回答： 首先指出用户当前处于 auth 模式，这很重要！受保护的 schema 无法修改。
+步骤1：切换到 Public 模式。 解释下拉菜单在左侧（左上角），将 auth 改为 public 。
+步骤2：找到目标表。 用户需要建立一些表（如果还没有建立的话）或者选中已经存在的 public
+表（例如 profiles ）。
+步骤3：点击 RLS 开关。 找到开关的位置（通常在表视图的右上角，标题附近）。
+步骤4：创建策略。 解释为什么开启后还需要点击“New Policy”，建议使用“Create a policy”，选
+择“For full customization”，然后粘贴之前提供的 SQL 代码（auth.uid() = user_id ）以使用户
+能够访问自己的数据。
+步骤5：可选：使用 SQL 更快的方法。 提到用户还可以使用 SQL 编辑器，或许能减少 UI 上的困
+惑。
+4. 起草过程中的自我修正/优化：
+初步想法： 直接告诉用户点击“New Policy”。
+修正： 不行，用户在 auth 模式下，那里没有“New Policy”按钮。必须先切换到 public 模式。
+强调当前背景： 提及“auth”模式。给用户看他们的截图。
+清晰度： 用准确的 UI 术语描述界面元素（下拉菜单, 右上角）。
+5. 最终输出生成（预翻译起草）：
+指出 auth 模式限制。
+解释 RLS（行级安全）中的“R”、“L”、“S”是什么意思（稍微说明一下，以增进理解）。
+提供分步 UI 指南。
+提供 SQL 指南作为备选方案。
+6. 思考过程总结（为最终文本做准备）： 用户面临的核心问题是他们停留在“auth”模式下。我必须先纠
+正这一点，然后提供后续步骤。
+sql
+alter table public.你的表名 enable row level security;
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+14/25
+</div>
+<div class="page">
+如果你在 public 里还没建过表，请点击右上角的 "New table" 随便建一张测试表（比如
+profiles ），或者直接去左侧的 SQL Editor 运行建表代码。
+第二步：找到 RLS 开关
+当你选中 public 下的某张表（比如 profiles ）时，注意看界面的右上角（在表名称的旁边，
+或者下方的表头区域），会有一个 RLS 的拨动开关。默认是关闭的，点击它变成“开启”状态即
+可。
+第三步：添加策略（Policies）—— 非常重要！
+仅仅开启 RLS 开关是不够的，它会默认拒绝所有人访问。你需要告诉数据库“谁可以看谁的数
+据”。
+1. 点击界面上的 "New Policy" 按钮。
+2. 选择 "Create a policy"，然后选 "For full customization"（完全自定义）。
+3. 输入策略名称（比如 用户可看自己的数据）。
+4. 在 USING expression 和 WITH CHECK expression 这两个框里，填入：
+(注意：这里的 user_id 是你建表时设置的字段名，如果是 id ，就改成 auth.uid() = id )
+5. 为 SELECT 、INSERT 、UPDATE 、DELETE 分别创建四个策略。
+💡 更快捷的方法（推荐新手使用）：
+如果你觉得点界面太复杂，直接点击左侧的 SQL Editor，在这里运行下面这段代码，一键搞定
+开启和授权（把 你的表名 和 你的user_id字段名 换成你自己的）：
+sql
+auth.uid() = user_id
+sql
+-- 开启 RLS
+alter table public.你的表名 enable row level security;
+-- 创建允许用户查看自己数据的策略
+create policy "用户可看自己的数据" 
+on public.你的表名 for select 
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+15/25
+</div>
+<div class="page">
+点击右下角的 Run 就行了！
+总结：你截图里的界面是看系统内置表的，去左侧侧边栏点击 Table Editor 上方的下拉框，切
+到 public 就能看到你自己建的表了，然后在里面就可以开启 RLS 了。
+using ( auth.uid() = user_id );
+-- 创建允许用户插入自己数据的策略
+create policy "用户可插入自己的数据" 
+on public.你的表名 for insert 
+with check ( auth.uid() = user_id );
+-- 创建允许用户修改自己数据的策略
+create policy "用户可更新自己的数据" 
+on public.你的表名 for update 
+using ( auth.uid() = user_id );
+你好！作为一个新手，能…
+TXT 5.68KB
+我想要实现这些表格的创建 你都帮我生成可以输入sql editor的代码，我直接
+输入
+已思考（用时 14 秒）
+仔细分析用户的需求：
+1. 用户背景：新手，正在使用 Supabase，之前已经通过对话了解了需要建哪些表。
+2. 当前需求：用户上传了之前的建议文档，并明确要求"你都帮我生成可以输入sql editor的代码，我直接
+输入"。
+3. 任务目标：将上文中提到的所有数据表结构转化为可以直接在 Supabase SQL Editor 中运行并创建的
+SQL 代码。
+分析之前的表格结构：
+用户提到的表格有：
+profiles (用户信息表)
+user_settings (用户偏好设置表)
+user_stats (用户统计数据表)
+vocabulary_words (单词题库表)
+user_vocabulary_progress (用户单词进度表)
+listening_materials (听力题库表)
+user_listening_records (用户听力记录表)
+reading_materials (阅读题库表)
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+16/25
+</div>
+<div class="page">
+user_reading_records (用户阅读记录表)
+writing_topics (写作题目表)
+user_writing_records (用户写作记录表)
+translation_topics (翻译题目表)
+user_translation_records (用户翻译记录表)
+grammar_topics (语法知识点表)
+user_grammar_progress (用户语法进度表)
+speaking_topics (口语题目表)
+user_speaking_records (用户口语记录表)
+mock_exams (模拟试卷表)
+mock_exam_questions (试卷题目详情表)
+user_exam_records (用户模拟考试记录表)
+撰写 SQL 的注意事项：
+1. 主键：每个表最好都有 id uuid primary key default gen_random_uuid() ，方便管理。
+2. 用户关联：profiles 表直接关联 auth.users(id) 。其他用户相关表的 user_id 也关联
+auth.users(id) 。
+3. 外键约束（Foreign Keys）：例如 user_vocabulary_progress 的 word_id 指向
+vocabulary_words(id) ；mock_exam_questions 的 exam_id 指向 mock_exams(id) 。这不仅保证数据
+完整性，还方便联表查询。
+4. RLS（行级安全）：用户之前问了 RLS 问题。我们需要在 SQL 中不仅创建表，还要开启 RLS 并且创
+建对应的策略（Policy）。这样用户直接运行后，表就已经是安全的了。
+5. 具体字段类型：
+文本用 text 。
+数字用 int 或 numeric 。
+布尔用 boolean 。
+时间用 timestamptz (Supabase 推荐带时区的时间)。
+JSON 用 jsonb （适合存 AI 反馈、选项等）。
+构思 SQL 代码编写步骤：
+第1步：设置基础表（公共引用）
+profiles ：包含 id (uuid), username, avatar_url, created_at。RLS：用户只能看/改自己的数
+据。
+第2步：用户偏好与统计
+user_settings ：包含 user_id, target_level, daily_goal_words, daily_goal_minutes,
+reminder_time, dark_mode, font_size。RLS：用户只能看/改自己的。
+user_stats ：包含 user_id, current_streak_days, total_words_learned, total_study_hours。
+RLS：用户只能看/改自己的。
+第3步：词库与进度
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+17/25
+</div>
+<div class="page">
+没问题，既然你已经了解了表的结构，为了让你能直接复制粘贴并成功运行，我把所有的建表语
+句、外键关联以及行级安全策略（RLS）都写好了。
+vocabulary_words ：包含 word, phonetic, meaning, example, level。由于是公共题库，RLS 需要
+允许所有登录用户或匿名用户读取。通常设置 for select using (true) 。
+user_vocabulary_progress ：包含 user_id, word_id, status, correct_answers,
+last_reviewed_at。RLS：用户只能看/改自己的。
+第4步：听力与阅读
+listening_materials ：公共题库，RLS for select using (true) 。
+user_listening_records ：用户数据，RLS user_id = auth.uid() 。
+reading_materials ：公共题库，RLS for select using (true) 。
+user_reading_records ：用户数据，RLS user_id = auth.uid() 。
+第5步：写作、翻译、语法、口语
+写作/翻译/语法/口语题目表均为公共题库，RLS 允许读取。
+对应的记录表均为用户数据，RLS 仅允许读写自己。
+注意：user_writing_records 需要 user_content 和 ai_feedback (jsonb)、score (int)。
+user_speaking_records 需要 audio_url 存储录音文件路径。
+第6步：模拟考试
+mock_exams ：公共题库，RLS 允许读取。
+mock_exam_questions ：公共题库，包含答案和解释，RLS 允许读取。
+user_exam_records ：用户数据，RLS 限制。
+编写逻辑：
+1. 为了方便新手，将建表语句和 RLS 语句一起写在一个代码块中，用户可以直接全选复制粘贴到 SQL
+Editor 并运行。
+2. 尽可能加上注释 -- ，解释每个表格是用来干嘛的，特别是处理 user_id 与 auth.users 的关系。
+3. 需要说明 create extension if not exists "pgcrypto"; 让 gen_random_uuid() 可用（虽然
+Supabase 默认开启，但写上更保险）。
+审查与润色：
+一些字段可能之前没有提到详细字段类型（比如 reminder_time 用 text 存 "20:00"，还是用 time
+？建议用 time ，更标准）。
+需要确保所有外键都指向正确的表。
+target_level 这种枚举类型可以直接用 text 存 "CET-4" 或 "CET-6"。
+拼接最终回复：
+按照逻辑分组给出代码，先列出建表命令，然后列出行级安全策略命令。这样用户可以依次复制。或者全
+部给出一段大的 SQL，让用户一次性运行。
+思考完成，准备输出。
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+18/25
+</div>
+<div class="page">
+你可以直接打开 Supabase 左侧的 SQL Editor，将以下整段代码直接复制进去，点击 Run 运
+行。
+（为了保证生成 UUID，代码开头默认添加了 pgcrypto 扩展，这在 Supabase 中通常是默认
+开启的，加个保险。同时 RLS 我已经帮你写好，保证新手操作时不会出现数据泄露问题。）
+sql
+-- 启用扩展以支持 gen_random_uuid()
+create extension if not exists "pgcrypto";
+-- 1. 用户与个人设置类
+create table public.profiles (
+  id uuid references auth.users on delete cascade not null primary key,
+  username text,
+  avatar_url text,
+  created_at timestamptz default timezone('utc'::text, now()) not null
+);
+create table public.user_settings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade not null,
+  target_level text default 'CET-6', -- CET-4 或 CET-6
+  daily_goal_words int default 20,
+  daily_goal_minutes int default 15,
+  reminder_time time default '20:00',
+  dark_mode boolean default false,
+  font_size text default '中',
+  unique(user_id)
+);
+-- 2. 仪表盘与打卡统计类
+create table public.user_stats (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade not null,
+  current_streak_days int default 0,
+  total_words_learned int default 0,
+  total_study_hours numeric default 0,
+  unique(user_id)
+);
+-- 3. 词汇学习类
+create table public.vocabulary_words (
+  id uuid primary key default gen_random_uuid(),
+  word text not null,
+  phonetic text,
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+19/25
+</div>
+<div class="page">
+meaning text,
+  example text,
+  level text -- CET-4 或 CET-6
+);
+create table public.user_vocabulary_progress (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade not null,
+  word_id uuid references public.vocabulary_words on delete cascade not null,
+  status text default 'new', -- new / learning / mastered
+  correct_answers int default 0,
+  last_reviewed_at timestamptz default now(),
+  unique(user_id, word_id)
+);
+-- 4. 听力与阅读类
+create table public.listening_materials (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  level text,
+  type text, -- 真题 / 模拟
+  duration int, -- 秒
+  audio_url text,
+  question_count int
+);
+create table public.user_listening_records (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade not null,
+  material_id uuid references public.listening_materials on delete cascade not null,
+  correct_count int,
+  total_count int,
+  duration_spent int, -- 秒
+  completed_at timestamptz default now()
+);
+create table public.reading_materials (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  content text, -- 文章正文
+  word_count int,
+  time_limit int, -- 分钟
+  type text
+);
+create table public.user_reading_records (
+  id uuid primary key default gen_random_uuid(),
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+20/25
+</div>
+<div class="page">
+user_id uuid references auth.users on delete cascade not null,
+  material_id uuid references public.reading_materials on delete cascade not null,
+  correct_count int,
+  total_count int,
+  duration_spent int,
+  completed_at timestamptz default now()
+);
+-- 5. 写作、翻译、语法、口语类
+create table public.writing_topics (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  requirement text, -- 题目要求
+  word_limit int,
+  level text
+);
+create table public.user_writing_records (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade not null,
+  topic_id uuid references public.writing_topics on delete cascade not null,
+  user_content text,
+  ai_feedback jsonb, -- 存AI的详细反馈
+  score int,
+  submitted_at timestamptz default now()
+);
+create table public.translation_topics (
+  id uuid primary key default gen_random_uuid(),
+  chinese_text text not null,
+  english_reference text,
+  topic text -- 生活与社会等
+);
+create table public.user_translation_records (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade not null,
+  topic_id uuid references public.translation_topics on delete cascade not null,
+  user_translation text,
+  is_correct boolean,
+  duration_spent int,
+  submitted_at timestamptz default now()
+);
+create table public.grammar_topics (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+21/25
+</div>
+<div class="page">
+definition text,
+  example text,
+  level text
+);
+create table public.user_grammar_progress (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade not null,
+  topic_id uuid references public.grammar_topics on delete cascade not null,
+  is_learned boolean default false,
+  learned_at timestamptz
+);
+create table public.speaking_topics (
+  id uuid primary key default gen_random_uuid(),
+  sentence text not null,
+  pronunciation_tip text,
+  scene_tag text
+);
+create table public.user_speaking_records (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade not null,
+  topic_id uuid references public.speaking_topics on delete cascade not null,
+  audio_url text,
+  ai_score int,
+  practice_time timestamptz default now()
+);
+-- 6. 模拟考试类
+create table public.mock_exams (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  duration_minutes int default 40,
+  pass_rate int default 60,
+  total_questions int default 30
+);
+create table public.mock_exam_questions (
+  id uuid primary key default gen_random_uuid(),
+  exam_id uuid references public.mock_exams on delete cascade not null,
+  question_text text not null,
+  option_a text,
+  option_b text,
+  option_c text,
+  option_d text,
+  correct_answer text,
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+22/25
+</div>
+<div class="page">
+explanation text
+);
+create table public.user_exam_records (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users on delete cascade not null,
+  exam_id uuid references public.mock_exams on delete cascade not null,
+  score int,
+  duration_spent int, -- 秒
+  submitted_at timestamptz default now()
+);
+-- ==========================================
+-- 开启所有表的 RLS (行级安全)
+-- ==========================================
+alter table public.profiles enable row level security;
+alter table public.user_settings enable row level security;
+alter table public.user_stats enable row level security;
+alter table public.vocabulary_words enable row level security;
+alter table public.user_vocabulary_progress enable row level security;
+alter table public.listening_materials enable row level security;
+alter table public.user_listening_records enable row level security;
+alter table public.reading_materials enable row level security;
+alter table public.user_reading_records enable row level security;
+alter table public.writing_topics enable row level security;
+alter table public.user_writing_records enable row level security;
+alter table public.translation_topics enable row level security;
+alter table public.user_translation_records enable row level security;
+alter table public.grammar_topics enable row level security;
+alter table public.user_grammar_progress enable row level security;
+alter table public.speaking_topics enable row level security;
+alter table public.user_speaking_records enable row level security;
+alter table public.mock_exams enable row level security;
+alter table public.mock_exam_questions enable row level security;
+alter table public.user_exam_records enable row level security;
+-- ==========================================
+-- 添加 RLS 策略 (Policies)
+-- 公共题库允许所有人读取；用户数据表只能自己读取和修改
+-- ==========================================
+-- 1. 公共题库 (Public Materials)：允许任意登录用户或者匿名用户读取 (select)
+create policy "Public read access for vocabulary" on public.vocabulary_words for select u
+sing (true);
+create policy "Public read access for listening" on public.listening_materials for select 
+using (true);
+create policy "Public read access for reading" on public.reading_materials for select usi
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+23/25
+</div>
+<div class="page">
+特别说明（重要）：
+1. 登录后自动建档：profiles 表关联了 auth.users 。你还需要在触发器或者前端代码里，当
+用户注册成功时，往 profiles 和 user_settings 里插入一条数据，否则这些表是空的。
+2. 外键保护：每个用户记录表我加了 on delete cascade ，意思是如果用户注销删除了账号，
+他的所有学习记录也会被自动清理，非常安全。
+ng (true);
+create policy "Public read access for writing" on public.writing_topics for select using 
+(true);
+create policy "Public read access for translation" on public.translation_topics for selec
+t using (true);
+create policy "Public read access for grammar" on public.grammar_topics for select using 
+(true);
+create policy "Public read access for speaking" on public.speaking_topics for select usin
+g (true);
+create policy "Public read access for exams" on public.mock_exams for select using (tru
+e);
+create policy "Public read access for questions" on public.mock_exam_questions for select 
+using (true);
+-- 2. 用户私有数据 (User Data)：用户可以访问和修改自己的数据
+create policy "Enable all access for own profiles" on public.profiles for all using (aut
+h.uid() = id) with check (auth.uid() = id);
+create policy "Enable all access for own settings" on public.user_settings for all using 
+(auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Enable all access for own stats" on public.user_stats for all using (auth.
+uid() = user_id) with check (auth.uid() = user_id);
+create policy "Enable all access for own vocab progress" on public.user_vocabulary_progre
+ss for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Enable all access for own listening records" on public.user_listening_reco
+rds for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Enable all access for own reading records" on public.user_reading_records 
+for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Enable all access for own writing records" on public.user_writing_records 
+for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Enable all access for own translation records" on public.user_translation_
+records for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Enable all access for own grammar progress" on public.user_grammar_progres
+s for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Enable all access for own speaking records" on public.user_speaking_record
+s for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Enable all access for own exam records" on public.user_exam_records for al
+l using (auth.uid() = user_id) with check (auth.uid() = user_id);
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+24/25
+</div>
+<div class="page">
+3. 功能验证：直接运行这段代码，Supabase 会提示创建成功。之后你在左侧切到 Table
+Editor 里的 public 模式，就能看到这一整排的表格了。
+如果在之后对接前端（比如怎么用 JS 代码往里面存数据）遇到困难，随时找我！
+2026/8/22 15:53
+英语自学网站数据库设计 - DeepSeek
+https://chat.deepseek.com/a/chat/s/8a1f118d-2a30-4d84-ae1b-9cf4d5bda9d2
+25/25
+</div>
+
+</body>
+</html>

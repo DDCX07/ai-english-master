@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - Vocabulary</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff", "tertiary": "#784b00", "on-error": "#ffffff",
+            "primary-container": "#2563eb", "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655", "primary": "#004ac6",
+            "secondary": "#006c49", "primary-fixed": "#dbe1ff",
+            "outline": "#737686", "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc", "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff", "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700", "on-surface": "#191c1e",
+            "tertiary-container": "#996100", "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f", "on-background": "#191c1e",
+            "inverse-on-surface": "#eff1f3", "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00", "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133", "error-container": "#ffdad6",
+            "background": "#f7f9fb", "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff", "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd", "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236", "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d", "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb", "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db", "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8", "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a", "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px", "stack-lg": "32px", "stack-sm": "8px",
+            "margin-desktop": "40px", "container-max": "1280px",
+            "margin-mobile": "16px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"],
+            "body-lg": ["Inter"], "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* 单词卡片翻转动画 */
+    .word-card {
+      perspective: 1000px;
+    }
+
+    .word-card-inner {
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+
+    .word-card.flipped .word-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .word-card-front, .word-card-back {
+      backface-visibility: hidden;
+    }
+
+    .word-card-back {
+      transform: rotateY(180deg);
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- 侧边栏导航 -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">CET-6 Prep Mode</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list"></ul>
+    </div>
+
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary hidden md:block">
+          Vocabulary Learning
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <button class="ai-button ai-button--primary" data-level-btn onclick="switchLevel('CET-4', this)">CET-4</button>
+          <button class="ai-button ai-button--text" data-level-btn onclick="switchLevel('CET-6', this)">CET-6</button>
+        </div>
+        <button class="ai-icon-btn" aria-label="Sound" onclick="speakWord()">
+          <span class="material-symbols-outlined">volume_up</span>
+        </button>
+        <button class="ai-button ai-button--secondary" onclick="showProgress()">
+          My Progress
+        </button>
+      </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto w-full">
+
+      <!-- 学习统计 -->
+      <section class="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-stack-lg">
+        <div class="ai-stat-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+          <div class="text-center">
+            <p class="text-label-sm text-outline mb-1">今日新词</p>
+            <p class="font-headline-lg text-headline-lg text-primary" id="today-words">30</p>
+          </div>
+        </div>
+        <div class="ai-stat-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+          <div class="text-center">
+            <p class="text-label-sm text-outline mb-1">已掌握</p>
+            <p class="font-headline-lg text-headline-lg text-secondary" id="mastered-words">3,240</p>
+          </div>
+        </div>
+        <div class="ai-stat-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+          <div class="text-center">
+            <p class="text-label-sm text-outline mb-1">待复习</p>
+            <p class="font-headline-lg text-headline-lg text-tertiary" id="review-words">128</p>
+          </div>
+        </div>
+        <div class="ai-stat-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm">
+          <div class="text-center">
+            <p class="text-label-sm text-outline mb-1">正确率</p>
+            <p class="font-headline-lg text-headline-lg text-primary" id="accuracy">85%</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 单词学习卡片 -->
+      <section class="mb-stack-lg">
+        <div class="flex items-center justify-between mb-stack-md">
+          <h2 class="font-title-md text-title-md text-on-surface">Today's Words</h2>
+          <span class="text-label-sm text-outline" id="word-progress">1/30</span>
+        </div>
+
+        <!-- 单词卡片 -->
+        <div class="word-card bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm cursor-pointer"
+             id="word-card"
+             onclick="flipCard()"
+             style="height: 440px;">
+
+          <div class="word-card-inner relative w-full h-full">
+            <!-- 正面（英文） -->
+            <div class="word-card-front absolute w-full p-12 flex flex-col items-center justify-center">
+              <div class="text-center">
+                <h3 class="font-display-lg text-display-lg text-primary mb-4" id="word-english" style="display:none;"></h3>
+                <p class="text-body-md text-outline mb-4" id="word-loading">词库加载中…</p>
+                <div class="flex items-center justify-center gap-2">
+                  <p class="text-body-lg text-on-surface-variant" id="word-phonetic" style="display:none;"></p>
+                  <button class="ai-icon-btn" onclick="event.stopPropagation(); speakWord()">
+                    <span class="material-symbols-outlined">volume_up</span>
+                  </button>
+                </div>
+              </div>
+              <p class="text-body-md text-on-surface-variant mt-8 text-center">点击卡片查看释义</p>
+            </div>
+
+            <!-- 背面（释义 / 近义词 / 例句 / 词根词缀 / 记忆辅助） -->
+            <div class="word-card-back absolute w-full h-full p-8 flex flex-col">
+              <div class="w-full max-w-2xl mx-auto flex-1 overflow-y-auto text-left flex flex-col gap-4 pr-2">
+
+                <!-- 释义 -->
+                <div id="word-chinese-box">
+                  <p class="text-label-sm text-outline mb-1">释义</p>
+                  <h4 class="font-title-md text-title-md text-on-surface" id="word-chinese"></h4>
+                </div>
+
+                <!-- 近义词 -->
+                <div id="word-synonym-box">
+                  <p class="text-label-sm text-outline mb-1">近义词</p>
+                  <div class="flex flex-wrap gap-2" id="word-synonyms"></div>
+                </div>
+
+                <!-- 例句（英中对照，全部展示） -->
+                <div class="bg-surface-container-high rounded-lg p-4" id="word-example-box">
+                  <p class="text-label-sm text-outline mb-2">例句</p>
+                  <div class="flex flex-col gap-3" id="word-examples"></div>
+                </div>
+
+                <!-- 词根词缀解析 -->
+                <div id="word-root-box">
+                  <p class="text-label-sm text-outline mb-1">词根词缀</p>
+                  <p class="text-sm text-on-surface-variant whitespace-pre-line leading-6" id="word-root"></p>
+                </div>
+
+                <!-- 单词变形 -->
+                <div id="word-forms-box">
+                  <p class="text-label-sm text-outline mb-1">单词变形</p>
+                  <p class="text-sm text-on-surface-variant whitespace-pre-line leading-6" id="word-forms"></p>
+                </div>
+
+                <!-- 记忆辅助 -->
+                <div class="bg-primary-fixed/40 rounded-lg p-4" id="word-memory-box">
+                  <p class="text-label-sm text-outline mb-1">记忆辅助</p>
+                  <p class="text-sm text-on-surface-variant leading-6" id="word-memory"></p>
+                </div>
+
+              </div>
+              <p class="text-label-sm text-outline text-center mt-3 shrink-0">再次点击卡片翻回正面</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex items-center justify-center gap-4 mt-stack-md">
+          <button class="ai-button ai-button--danger" onclick="nextWord('hard')">
+            <span class="material-symbols-outlined">close</span>
+            <span>不认识</span>
+          </button>
+          <button class="ai-button ai-button--secondary" onclick="nextWord('normal')">
+            <span class="material-symbols-outlined">check</span>
+            <span>认识</span>
+          </button>
+          <button class="ai-button ai-button--success" onclick="nextWord('easy')">
+            <span class="material-symbols-outlined">star</span>
+            <span>太简单</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 单词列表 -->
+      <section>
+        <h2 class="font-title-md text-title-md text-on-surface mb-stack-md">Word List</h2>
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-surface-container">
+              <tr>
+                <th class="text-left px-6 py-3 text-label-sm text-outline">Word</th>
+                <th class="text-left px-6 py-3 text-label-sm text-outline">Meaning</th>
+                <th class="text-left px-6 py-3 text-label-sm text-outline">Status</th>
+                <th class="text-left px-6 py-3 text-label-sm text-outline">Action</th>
+              </tr>
+            </thead>
+            <tbody id="word-list-body">
+              <!-- 单词列表会通过JS动态生成 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/data/menu-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260830b"></script>
+
+  <script>
+    // 当前单词索引
+    let currentWordIndex = 0;
+    let words = [];
+    let currentLevel = 'CET-4';
+
+    // 词库数据源：优先腾讯云 COS（10.8MB 大文件不随静态站分发），失败回退本地
+    const VOCAB_SOURCES = [
+      'https://ai-english-master-1473543848.cos.ap-beijing.myqcloud.com/vocab/vocabulary-data.js',
+      'js/data/vocabulary-data.js'
+    ];
+
+    // 依次尝试数据源加载词库，全部成功后回调
+    function loadVocabulary(sources, onReady) {
+      if (!sources.length) {
+        showToast('词库加载失败，请检查网络后刷新重试', 'error');
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = sources[0];
+      s.onload = onReady;
+      s.onerror = () => loadVocabulary(sources.slice(1), onReady);
+      document.head.appendChild(s);
+    }
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+      // 设置当前页面
+      currentActivePage = 'vocabulary';
+      renderMenu();
+
+      // 词库就绪后再初始化（默认四级词库，随机抽 30 个）
+      loadVocabulary(VOCAB_SOURCES, function () {
+        loadWordList();
+        renderStats();
+      });
+    });
+
+    // 刷新顶部统计卡片（数据来自统一数据层，全部是真实学习记录）
+    function renderStats() {
+      const vocab = api.getVocabStats();
+      const overall = api.getStats();
+      document.getElementById('today-words').textContent = vocab.todayNew;
+      document.getElementById('mastered-words').textContent = formatNumber(vocab.mastered);
+      document.getElementById('review-words').textContent = formatNumber(vocab.review);
+      document.getElementById('accuracy').textContent = (overall.vocabAccuracy || 0) + '%';
+    }
+
+    // 切换词库级别
+    function switchLevel(level, el) {
+      if (currentLevel === level) return;
+      currentLevel = level;
+      document.querySelectorAll('[data-level-btn]').forEach(btn => {
+        btn.classList.remove('ai-button--primary');
+        btn.classList.add('ai-button--text');
+      });
+      if (el) {
+        el.classList.remove('ai-button--text');
+        el.classList.add('ai-button--primary');
+      }
+      loadWordList();
+      const count = level === 'CET-4'
+        ? vocabularyData.cet4.length
+        : vocabularyData.cet6.length;
+      showToast('已切换到' + (level === 'CET-4' ? '四级' : '六级') +
+        '词库（共 ' + count + ' 词，每次随机学习 30 个）', 'info');
+    }
+
+    // 从词库随机抽 n 个单词（优先抽没学过和标记"不认识"的）
+    function getWordsByLevel(level, count) {
+      const pool = (level === 'CET-4' ? vocabularyData.cet4 : vocabularyData.cet6).slice();
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      const progress = api.getVocabProgress();
+      const fresh = pool.filter(e => {
+        const p = progress[e.word];
+        return !p || p.difficulty === 'hard';
+      });
+      return (fresh.length >= count ? fresh : pool).slice(0, count);
+    }
+
+    // 加载单词列表
+    function loadWordList() {
+      currentWordIndex = 0;
+      words = getWordsByLevel(currentLevel, 30);
+      loadWord(currentWordIndex);
+      renderWordList();
+    }
+
+    // 例句拆分：'英文（中文）' / '英文 (中文)' / '英文 - 中文' → { en, cn }
+    function splitExample(ex) {
+      const s = String(ex || '').trim();
+      let m = s.match(/^(.+?)[\s]*[（(](.+)[）)][\s]*$/);
+      if (m) return { en: m[1].trim(), cn: m[2].trim() };
+      m = s.match(/^(.+?)\s+-\s+(.+)$/);
+      if (m && /[一-龥]/.test(m[2])) return { en: m[1].trim(), cn: m[2].trim() };
+      return { en: s, cn: '' };
+    }
+
+    // 显示/隐藏背面的小节（没有数据的字段整块不占位）
+    function setSectionVisible(id, has) {
+      document.getElementById(id).style.display = has ? '' : 'none';
+    }
+
+    // 加载单词
+    function loadWord(index) {
+      if (index >= words.length) {
+        showToast('恭喜！今天的学习任务完成了！🎉', 'success');
+        return;
+      }
+
+      const word = words[index];
+      // 首个单词渲染就绪：撤掉"词库加载中…"占位（避免写死的假单词闪现）
+      const loadingEl = document.getElementById('word-loading');
+      if (loadingEl) loadingEl.style.display = 'none';
+      document.getElementById('word-english').style.display = '';
+      document.getElementById('word-english').textContent = word.word;
+      document.getElementById('word-progress').textContent = `${index + 1}/${words.length}`;
+
+      // 音标：新版词库四六级都有
+      const phoneticEl = document.getElementById('word-phonetic');
+      phoneticEl.textContent = word.phonetic || '';
+      phoneticEl.style.display = word.phonetic ? '' : 'none';
+
+      // 释义：多条用分号连接
+      const meanings = (word.meanings || []).filter(Boolean);
+      document.getElementById('word-chinese').textContent = meanings.join('；');
+      setSectionVisible('word-chinese-box', meanings.length);
+
+      // 近义词：徽章展示
+      const syns = (word.synonyms || []).filter(Boolean);
+      document.getElementById('word-synonyms').innerHTML =
+        syns.map(s => `<span class="ai-badge">${s}</span>`).join('');
+      setSectionVisible('word-synonym-box', syns.length);
+
+      // 例句：英中对照逐条渲染（最多 3 条，防止背面过长）
+      const exs = (word.examples || []).filter(Boolean).slice(0, 3);
+      document.getElementById('word-examples').innerHTML = exs.map(ex => {
+        const { en, cn } = splitExample(ex);
+        return `<p class="text-body-md text-on-surface">${en}</p>` +
+          (cn ? `<p class="text-body-md text-on-surface-variant">${cn}</p>` : '');
+      }).join('');
+      setSectionVisible('word-example-box', exs.length);
+
+      // 词根词缀 / 变形 / 记忆辅助：纯文本段落（"无"之类占位文本视为空）
+      const stripEmpty = t => (t && !/^(无|没有.{0,12})[。.]?$/.test(String(t).trim()) ? t : '');
+      document.getElementById('word-root').textContent = stripEmpty(word.root);
+      setSectionVisible('word-root-box', !!stripEmpty(word.root));
+      document.getElementById('word-forms').textContent = stripEmpty(word.word_forms);
+      setSectionVisible('word-forms-box', !!stripEmpty(word.word_forms));
+      document.getElementById('word-memory').textContent = word.memory_aid || '';
+      setSectionVisible('word-memory-box', !!word.memory_aid);
+
+      // 重置卡片状态
+      document.getElementById('word-card').classList.remove('flipped');
+    }
+
+    // 翻转卡片
+    function flipCard() {
+      if (!words.length) return;   // 词库未加载时不翻卡
+      document.getElementById('word-card').classList.toggle('flipped');
+    }
+
+    // 发音
+    function speakWord() {
+      const word = words[currentWordIndex]?.word;
+      if (word && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = 'en-US';
+        speechSynthesis.speak(utterance);
+      }
+    }
+
+    // 下一个单词
+    function nextWord(difficulty) {
+      // 保存学习记录（经过统一数据层，将来一键切换到后端）
+      const word = words[currentWordIndex];
+      word.difficulty = difficulty;
+      word.learned = true;
+      api.recordWord(word.word, currentLevel, difficulty);
+
+      // 更新当前单词在列表中的状态
+      updateWordListItem(currentWordIndex, difficulty);
+
+      // 移动到下一个单词
+      currentWordIndex++;
+      loadWord(currentWordIndex);
+
+      // 刷新统计卡片
+      renderStats();
+
+      // 显示提示
+      const messages = {
+        'hard': '已标记为"不认识"，会加强复习',
+        'normal': '已标记为"认识"',
+        'easy': '已标记为"太简单"'
+      };
+      showToast(messages[difficulty], 'success');
+    }
+
+    // 渲染单词列表
+    function renderWordList() {
+      const tbody = document.getElementById('word-list-body');
+      tbody.innerHTML = words.map((word, index) => `
+        <tr class="border-t border-outline-variant hover:bg-surface-container-high transition-colors">
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-2">
+              <span class="font-title-md text-primary">${word.word}</span>
+              <button class="ai-icon-btn" onclick="speakListWord('${word.word}')">
+                <span class="material-symbols-outlined text-sm">volume_up</span>
+              </button>
+            </div>
+            ${word.phonetic ? `<p class="text-label-sm text-outline mt-1">${word.phonetic}</p>` : ''}
+          </td>
+          <td class="px-6 py-4 text-body-md text-on-surface-variant">
+            ${(word.meanings || []).join('；')}
+            ${(word.synonyms || []).length
+              ? `<p class="text-label-sm text-outline mt-1">近义词：${word.synonyms.slice(0, 5).join(', ')}</p>`
+              : ''}
+          </td>
+          <td class="px-6 py-4" id="word-status-${index}">
+            ${getStatusLabel(index)}
+          </td>
+          <td class="px-6 py-4">
+            <button class="ai-button ai-button--text" onclick="goToWord(${index})">
+              Practice
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 获取状态标签
+    function getStatusLabel(index) {
+      const word = words[index];
+      if (index === currentWordIndex) {
+        return '<span class="ai-badge ai-badge--primary">Learning</span>';
+      } else if (word.learned) {
+        const difficultyClass = {
+          'hard': 'ai-badge--error',
+          'normal': 'ai-badge--secondary',
+          'easy': 'ai-badge--success'
+        };
+        const difficultyText = {
+          'hard': 'Hard',
+          'normal': 'Normal',
+          'easy': 'Easy'
+        };
+        return `<span class="ai-badge ${difficultyClass[word.difficulty]}">${difficultyText[word.difficulty]}</span>`;
+      }
+      return '<span class="ai-badge">Pending</span>';
+    }
+
+    // 更新单词列表项的状态
+    function updateWordListItem(index, difficulty) {
+      const statusCell = document.getElementById(`word-status-${index}`);
+      statusCell.innerHTML = getStatusLabel(index);
+    }
+
+    // 跳转到指定单词
+    function goToWord(index) {
+      currentWordIndex = index;
+      loadWord(index);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 列表中的单词发音
+    function speakListWord(word) {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = 'en-US';
+        speechSynthesis.speak(utterance);
+      }
+    }
+
+    // 显示学习进度
+    function showProgress() {
+      const learned = words.filter(w => w.learned).length;
+      const total = words.length;
+      showToast(`已学习 ${learned}/${total} 个单词`, 'info');
+    }
+  </script>
+
+</body>
+</html>

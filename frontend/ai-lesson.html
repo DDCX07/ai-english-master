@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - AI Reading Lesson</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind 配置（与其他页面一致） -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff", "tertiary": "#784b00", "on-error": "#ffffff",
+            "primary-container": "#2563eb", "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655", "primary": "#004ac6",
+            "secondary": "#006c49", "primary-fixed": "#dbe1ff",
+            "outline": "#737686", "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc", "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff", "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700", "on-surface": "#191c1e",
+            "tertiary-container": "#996100", "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f", "on-background": "#191c1e",
+            "inverse-on-surface": "#eff1f3", "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00", "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133", "error-container": "#ffdad6",
+            "background": "#f7f9fb", "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff", "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd", "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236", "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d", "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb", "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db", "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8", "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a", "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px", "stack-lg": "32px", "stack-sm": "8px",
+            "margin-desktop": "40px", "container-max": "1280px",
+            "margin-mobile": "16px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"],
+            "body-lg": ["Inter"], "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* 三挡位选择卡片 */
+    .level-card {
+      cursor: pointer;
+      border: 2px solid var(--ai-outline-variant, #c3c6d7);
+      transition: all 0.2s ease;
+    }
+    .level-card:hover { transform: translateY(-2px); }
+    .level-card.active-l1 { border-color: #16a34a; background: rgba(22, 163, 74, 0.06); }
+    .level-card.active-l2 { border-color: #d97706; background: rgba(217, 119, 6, 0.06); }
+    .level-card.active-l3 { border-color: #9333ea; background: rgba(147, 51, 234, 0.06); }
+
+    .level-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .dot-l1 { background: #16a34a; }
+    .dot-l2 { background: #d97706; }
+    .dot-l3 { background: #9333ea; }
+
+    /* 今日已生成过的挡位：整卡置灰 */
+    .level-card.done { opacity: 0.55; filter: grayscale(0.7); }
+    .level-card.done:hover { opacity: 0.8; filter: grayscale(0.4); }
+    .done-badge { background: rgba(0, 108, 73, 0.12) !important; color: #006c49; filter: none; }
+    html.dark-mode .done-badge { color: #4ade80; }
+
+    /* 生成过程可视化：分步进度 */
+    .load-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      color: #737686;
+      opacity: 0.4;
+      transition: all 0.35s ease;
+    }
+    html.dark-mode .load-step { color: #8a94a6; }
+    .load-step .step-icon { font-size: 20px; flex-shrink: 0; }
+    .load-step.active {
+      opacity: 1;
+      color: var(--ai-primary, #004ac6);
+      font-weight: 600;
+      background: rgba(0, 74, 198, 0.06);
+    }
+    html.dark-mode .load-step.active { color: #b4c5ff; background: rgba(180, 197, 255, 0.08); }
+    .load-step.active .step-icon { animation: spin 1.1s linear infinite; }
+    .load-step.done { opacity: 0.85; color: var(--ai-secondary, #006c49); }
+    html.dark-mode .load-step.done { color: #4ade80; }
+
+    .badge-l1 { background: rgba(22, 163, 74, 0.12); color: #16a34a; }
+    .badge-l2 { background: rgba(217, 119, 6, 0.12); color: #d97706; }
+    .badge-l3 { background: rgba(147, 51, 234, 0.12); color: #9333ea; }
+    html.dark-mode .badge-l1 { color: #4ade80; }
+    html.dark-mode .badge-l2 { color: #fbbf24; }
+    html.dark-mode .badge-l3 { color: #c084fc; }
+
+    /* 阅读正文 */
+    .lesson-text p { margin-bottom: 1rem; text-indent: 2em; line-height: 1.8; }
+
+    /* 选项样式（与 reading.html 一致） */
+    .quiz-option { cursor: pointer; transition: all 0.2s ease; }
+    .quiz-option:hover {
+      border-color: var(--ai-primary, #004ac6);
+      background-color: rgba(0, 74, 198, 0.05);
+    }
+    .quiz-option.selected {
+      border-color: var(--ai-primary, #004ac6);
+      background-color: rgba(0, 74, 198, 0.1);
+    }
+    .quiz-option.correct {
+      border-color: var(--ai-secondary, #006c49);
+      background-color: rgba(0, 108, 73, 0.1);
+    }
+    .quiz-option.incorrect {
+      border-color: var(--ai-error, #ba1a1a);
+      background-color: rgba(186, 26, 26, 0.1);
+    }
+
+    /* 加载动画 */
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid rgba(0, 74, 198, 0.15);
+      border-top-color: var(--ai-primary, #004ac6);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ========== 划线功能样式（与 reading.html 同一套） ========== */
+    #highlight-toolbar {
+      display: none;
+      position: absolute;
+      background: #ffffff;
+      border: 1px solid #c3c6d7;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      padding: 6px 10px;
+      z-index: 100;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    html.dark-mode #highlight-toolbar { background: #2d3133; border-color: #434655; }
+    /* 取色弹窗：锚定在"划线模式"按钮上方 */
+    #highlight-color-picker {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 10px);
+      right: 0;
+      background: #ffffff;
+      border: 1px solid #c3c6d7;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+      padding: 10px 12px;
+      z-index: 110;
+      white-space: nowrap;
+    }
+    #highlight-color-picker.open { display: block; }
+    html.dark-mode #highlight-color-picker { background: #2d3133; border-color: #434655; }
+    #highlight-color-picker .picker-title { font-size: 12px; font-weight: 600; color: #434655; }
+    #highlight-color-picker .picker-hint { font-size: 12px; color: #737686; margin-top: 6px; }
+    html.dark-mode #highlight-color-picker .picker-title { color: #b9c0cf; }
+    html.dark-mode #highlight-color-picker .picker-hint { color: #8a94a6; }
+    .color-btn {
+      display: inline-block;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid #c3c6d7;
+      margin: 8px 4px 0;
+      cursor: pointer;
+      vertical-align: middle;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .color-btn:hover { transform: scale(1.15); }
+    .color-btn.active {
+      border-color: #004ac6;
+      transform: scale(1.15);
+      box-shadow: 0 0 0 2px rgba(0, 74, 198, 0.25);
+    }
+    #highlight-toolbar .color-dot {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 1px #c3c6d7;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    #highlight-toolbar .confirm-btn {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      background: #004ac6;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #highlight-toolbar .confirm-btn:hover { background: #2563eb; }
+    html.dark-mode #highlight-toolbar .confirm-btn { background: #2563eb; }
+    html.dark-mode #highlight-toolbar .confirm-btn:hover { background: #3b82f6; }
+    #highlight-panel-clear {
+      border: none;
+      background: transparent;
+      color: #ba1a1a;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 12px;
+    }
+    #highlight-panel-clear:hover { text-decoration: underline; }
+    html.dark-mode #highlight-panel-clear { color: #ff8a80; }
+    .hl-yellow { background-color: rgba(255, 235, 59, 0.35); border-bottom: 2px solid #fdd835; border-radius: 2px; padding: 1px 2px; }
+    .hl-green  { background-color: rgba(102, 187, 106, 0.3); border-bottom: 2px solid #66bb6a; border-radius: 2px; padding: 1px 2px; }
+    .hl-blue   { background-color: rgba(66, 165, 245, 0.25); border-bottom: 2px solid #42a5f5; border-radius: 2px; padding: 1px 2px; }
+    .hl-pink   { background-color: rgba(236, 64, 122, 0.25); border-bottom: 2px solid #ec407a; border-radius: 2px; padding: 1px 2px; }
+    .hl-orange { background-color: rgba(255, 167, 38, 0.3); border-bottom: 2px solid #ffa726; border-radius: 2px; padding: 1px 2px; }
+    html.dark-mode .hl-yellow { background-color: rgba(255, 235, 59, 0.25); }
+    html.dark-mode .hl-green  { background-color: rgba(102, 187, 106, 0.2); }
+    html.dark-mode .hl-blue   { background-color: rgba(66, 165, 245, 0.2); }
+    html.dark-mode .hl-pink   { background-color: rgba(236, 64, 122, 0.2); }
+    html.dark-mode .hl-orange { background-color: rgba(255, 167, 38, 0.2); }
+    #lesson-content.mark-mode ::selection { background: rgba(0, 74, 198, 0.3); }
+
+    /* 划线工具按钮 */
+    .hl-tool-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 2.25rem;
+      padding: 0 0.875rem;
+      border-radius: 9999px;
+      border: 1px solid var(--ai-outline-variant, #c3c6d7);
+      background: var(--ai-surface-container-lowest, #ffffff);
+      color: var(--ai-on-surface-variant, #434655);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .hl-tool-btn:hover {
+      color: var(--ai-primary, #004ac6);
+      border-color: var(--ai-primary, #004ac6);
+      background: rgba(0, 74, 198, 0.06);
+    }
+    .hl-tool-btn.highlight-active {
+      color: #ffffff;
+      background: var(--ai-primary, #004ac6);
+      border-color: var(--ai-primary, #004ac6);
+      box-shadow: 0 2px 8px rgba(0, 74, 198, 0.3);
+    }
+    html.dark-mode .hl-tool-btn {
+      background: var(--ai-surface-container-lowest, #1b1e24);
+      border-color: #4a4d56;
+      color: #e3e5e8;
+    }
+    html.dark-mode .hl-tool-btn:hover {
+      color: var(--ai-inverse-primary, #b4c5ff);
+      border-color: var(--ai-inverse-primary, #b4c5ff);
+      background: rgba(180, 197, 255, 0.08);
+    }
+    html.dark-mode .hl-tool-btn.highlight-active {
+      color: #ffffff;
+      background: var(--ai-primary-container, #2563eb);
+      border-color: var(--ai-primary-container, #2563eb);
+    }
+
+    /* 划线列表面板（右侧抽屉） */
+    #highlight-panel {
+      display: none;
+      position: fixed;
+      right: 0;
+      top: 80px;
+      width: 340px;
+      max-height: calc(100vh - 100px);
+      background: #ffffff;
+      border-left: 1px solid #c3c6d7;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.08);
+      z-index: 90;
+      flex-direction: column;
+    }
+    html.dark-mode #highlight-panel { background: #1a1d23; border-color: #434655; }
+    #highlight-panel.open { display: flex; }
+    #highlight-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #c3c6d7;
+      background: #f7f9fb;
+    }
+    html.dark-mode #highlight-panel-header { background: #2d3133; border-color: #434655; }
+    #highlight-panel-header h3 { margin: 0; font-size: 14px; font-weight: 600; color: #191c20; }
+    html.dark-mode #highlight-panel-header h3 { color: #eff1f3; }
+    #highlight-panel-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #434655;
+      padding: 0 4px;
+    }
+    #highlight-panel-body { flex: 1; overflow-y: auto; padding: 12px 16px; }
+    #highlight-panel-empty {
+      text-align: center;
+      color: #737686;
+      font-size: 13px;
+      padding: 32px 0;
+    }
+    .highlight-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      border-left: 4px solid;
+      position: relative;
+    }
+    .highlight-item.hl-yellow { border-left-color: #fdd835; background: rgba(255,235,59,0.06); }
+    .highlight-item.hl-green  { border-left-color: #66bb6a; background: rgba(102,187,106,0.06); }
+    .highlight-item.hl-blue   { border-left-color: #42a5f5; background: rgba(66,165,245,0.06); }
+    .highlight-item.hl-pink   { border-left-color: #ec407a; background: rgba(236,64,122,0.06); }
+    .highlight-item.hl-orange { border-left-color: #ffa726; background: rgba(255,167,38,0.06); }
+    .highlight-item-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #191c20;
+      margin-bottom: 4px;
+    }
+    html.dark-mode .highlight-item-text { color: #eff1f3; }
+    .highlight-item-meta {
+      font-size: 11px;
+      color: #737686;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .highlight-item-delete { cursor: pointer; color: #ba1a1a; font-size: 12px; }
+    .highlight-item-delete:hover { text-decoration: underline; }
+    #highlight-stats {
+      padding: 8px 16px;
+      border-top: 1px solid #c3c6d7;
+      font-size: 11px;
+      color: #737686;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- 侧边栏导航 -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">AI Reading Lesson</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list"></ul>
+    </div>
+
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary hidden md:block">
+          AI Reading Lesson
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button class="ai-button ai-button--secondary" onclick="showHistory()">
+          <span class="material-symbols-outlined">history</span>
+          <span class="hidden md:inline">My Lessons</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto w-full">
+
+      <!-- ==================== 挡位选择视图 ==================== -->
+      <section id="select-view">
+
+        <!-- 三挡位选择器 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
+          <div class="level-card bg-surface-container-lowest rounded-xl p-6" id="level-card-1" onclick="selectLevel(1)">
+            <div class="flex items-center justify-between mb-3">
+              <span class="level-dot dot-l1"></span>
+              <div class="flex items-center gap-2">
+                <span class="ai-badge ai-badge--secondary done-badge" style="display:none;">✓ 已生成</span>
+                <span class="ai-badge badge-l1 rounded-full px-3 py-1 text-label-sm font-semibold">Level 1</span>
+              </div>
+            </div>
+            <h3 class="font-title-md text-title-md text-on-surface">CET-4</h3>
+            <p class="text-body-md text-on-surface-variant mt-1">基础阅读 · 250~350 词 · 生活文化类 · 含中文摘要</p>
+          </div>
+
+          <div class="level-card bg-surface-container-lowest rounded-xl p-6" id="level-card-2" onclick="selectLevel(2)">
+            <div class="flex items-center justify-between mb-3">
+              <span class="level-dot dot-l2"></span>
+              <div class="flex items-center gap-2">
+                <span class="ai-badge ai-badge--secondary done-badge" style="display:none;">✓ 已生成</span>
+                <span class="ai-badge badge-l2 rounded-full px-3 py-1 text-label-sm font-semibold">Level 2</span>
+              </div>
+            </div>
+            <h3 class="font-title-md text-title-md text-on-surface">CET-6</h3>
+            <p class="text-body-md text-on-surface-variant mt-1">进阶阅读 · 350~450 词 · 社会科技类 · 含英文释义与近义词辨析</p>
+          </div>
+
+          <div class="level-card bg-surface-container-lowest rounded-xl p-6" id="level-card-3" onclick="selectLevel(3)">
+            <div class="flex items-center justify-between mb-3">
+              <span class="level-dot dot-l3"></span>
+              <div class="flex items-center gap-2">
+                <span class="ai-badge ai-badge--secondary done-badge" style="display:none;">✓ 已生成</span>
+                <span class="ai-badge badge-l3 rounded-full px-3 py-1 text-label-sm font-semibold">Level 3</span>
+              </div>
+            </div>
+            <h3 class="font-title-md text-title-md text-on-surface">CET-6+</h3>
+            <p class="text-body-md text-on-surface-variant mt-1">高阶挑战 · 450~600 词 · 社论评析 · 纯英英释义 · 含推断题与态度题</p>
+          </div>
+        </div>
+
+        <!-- 生成按钮 -->
+        <div class="text-center mb-stack-lg">
+          <button class="ai-button ai-button--primary px-10" id="generate-btn" onclick="generateLesson()">
+            <span class="material-symbols-outlined">auto_awesome</span>
+            <span>Generate Today's Lesson</span>
+          </button>
+          <p class="text-label-sm text-outline mt-2">每天每个级别更新一篇 China Daily 真实外刊精读</p>
+        </div>
+
+        <!-- 最近学案记录 -->
+        <div id="history-preview" class="mb-stack-lg"></div>
+      </section>
+
+      <!-- ==================== 加载视图（生成过程可视化） ==================== -->
+      <section id="loading-view" class="hidden text-center py-16">
+        <div class="spinner mb-6"></div>
+        <h3 class="font-title-md text-title-md text-on-surface mb-2" id="loading-title">Generating your lesson...</h3>
+        <p class="text-body-md text-outline" id="loading-hint">抓取外刊原文并用 AI 出题，首次约需 10~20 秒</p>
+        <div class="max-w-md mx-auto mt-stack-lg text-left flex flex-col gap-1" id="loading-steps"></div>
+      </section>
+
+      <!-- ==================== 错误视图 ==================== -->
+      <section id="error-view" class="hidden text-center py-16">
+        <span class="material-symbols-outlined text-[64px] text-error">cloud_off</span>
+        <h3 class="font-title-md text-title-md text-on-surface mt-4 mb-2">Generation Failed</h3>
+        <p class="text-body-md text-on-surface-variant mb-6" id="error-message">—</p>
+        <div class="flex justify-center gap-4">
+          <button class="ai-button ai-button--primary" onclick="generateLesson()">
+            <span class="material-symbols-outlined">refresh</span><span>Retry</span>
+          </button>
+          <button class="ai-button ai-button--secondary" onclick="backToSelect()">
+            <span class="material-symbols-outlined">list</span><span>Back</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ==================== 学案视图 ==================== -->
+      <section id="lesson-view" class="hidden">
+
+        <!-- 返回 -->
+        <div class="mb-stack-md">
+          <button class="ai-button ai-button--text" onclick="backToSelect()">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <span>Back</span>
+          </button>
+        </div>
+
+        <!-- 学案头 -->
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="ai-badge rounded-full px-3 py-1 text-label-sm font-semibold" id="lesson-level-badge">Level 1</span>
+            <span class="ai-badge ai-badge--warning" id="lesson-date"></span>
+            <span class="text-label-sm text-outline" id="lesson-meta"></span>
+          </div>
+          <h3 class="font-headline-lg-mobile md:font-headline-lg font-bold text-on-surface mb-2" id="lesson-title"></h3>
+          <p class="text-body-md text-on-surface-variant">
+            <span class="material-symbols-outlined text-sm align-middle">link</span>
+            Source:
+            <a class="text-primary hover:underline" id="lesson-source" href="#" target="_blank" rel="noopener">China Daily</a>
+            <span class="mx-2">·</span>
+            <span id="lesson-topic"></span>
+          </p>
+          <div class="bg-surface-container rounded-lg p-4 mt-4" id="summary-box">
+            <p class="text-label-sm text-outline mb-1">文章摘要</p>
+            <p class="text-body-md text-on-surface" id="lesson-summary"></p>
+          </div>
+        </div>
+
+        <!-- 文章原文（支持五色划线，与 reading.html 同一套交互） -->
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-stack-md">
+            <h4 class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">article</span>Article
+            </h4>
+            <div class="flex items-center gap-2 relative">
+              <div id="highlight-color-picker">
+                <p class="picker-title">① 选择划线颜色</p>
+                <span class="color-btn active" data-color="yellow" style="background:#fdd835;" title="黄色"></span>
+                <span class="color-btn" data-color="green" style="background:#66bb6a;" title="绿色"></span>
+                <span class="color-btn" data-color="blue" style="background:#42a5f5;" title="蓝色"></span>
+                <span class="color-btn" data-color="pink" style="background:#ec407a;" title="粉色"></span>
+                <span class="color-btn" data-color="orange" style="background:#ffa726;" title="橙色"></span>
+                <p class="picker-hint">② 在正文中划选文本，点「确认划线」生效</p>
+              </div>
+              <button class="hl-tool-btn" onclick="autoMarkVocab()" title="把本文学案词汇在正文中一键标黄">📌 标记词汇</button>
+              <button class="hl-tool-btn" id="highlight-toggle-btn" onclick="aiHighlight.toggleMode()" title="开启后选中文本即可划线">✏️ 划线模式</button>
+              <button class="hl-tool-btn" id="highlight-list-btn" onclick="aiHighlight.togglePanel()" title="查看本文所有划线">📋 划线列表</button>
+            </div>
+          </div>
+          <div class="lesson-text text-body-lg text-on-surface max-w-4xl" id="lesson-content"></div>
+          <!-- 浮动选词高亮确认条 -->
+          <div id="highlight-toolbar">
+            <span class="color-dot" id="toolbar-color-dot" style="background:#fdd835;"></span>
+            <span class="confirm-btn" onclick="aiHighlight.applyHighlight()">确认划线</span>
+          </div>
+        </div>
+
+        <!-- 核心句子 -->
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6 mb-stack-lg" id="key-sentence-box">
+          <h4 class="font-title-md text-title-md text-on-surface mb-2 flex items-center gap-2">
+            <span class="material-symbols-outlined text-tertiary">format_quote</span>Key Sentence
+          </h4>
+          <p class="text-body-lg text-on-surface italic" id="lesson-key-sentence"></p>
+        </div>
+
+        <!-- 核心词汇 -->
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <h4 class="font-title-md text-title-md text-on-surface mb-stack-md flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary">menu_book</span>Vocabulary
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-stack-md" id="vocab-list"></div>
+        </div>
+
+        <!-- 阅读理解题 -->
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+          <h4 class="font-title-md text-title-md text-on-surface mb-stack-md flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">quiz</span>Comprehension Questions
+          </h4>
+          <div class="space-y-stack-md" id="question-list"></div>
+          <div class="text-center mt-stack-lg" id="quiz-actions">
+            <button class="ai-button ai-button--primary px-10" onclick="submitAnswers()">
+              <span class="material-symbols-outlined">check</span><span>Submit Answers</span>
+            </button>
+          </div>
+
+          <!-- 成绩（提交后显示） -->
+          <div class="hidden text-center mt-stack-lg p-6 rounded-xl bg-surface-container" id="result-box">
+            <p class="font-headline-lg text-headline-lg text-primary" id="score-percentage">0%</p>
+            <p class="text-body-md text-on-surface-variant mb-4" id="score-detail"></p>
+            <div class="flex justify-center gap-4">
+              <button class="ai-button ai-button--secondary" onclick="retryQuiz()">
+                <span class="material-symbols-outlined">refresh</span><span>Try Again</span>
+              </button>
+              <button class="ai-button ai-button--secondary" onclick="backToSelect()">
+                <span class="material-symbols-outlined">list</span><span>Another Level</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- 划线列表面板（右侧抽屉） -->
+  <div id="highlight-panel">
+    <div id="highlight-panel-header">
+      <h3>我的划线 <span id="highlight-count" class="text-label-sm text-outline">(0)</span></h3>
+      <button id="highlight-panel-close" onclick="aiHighlight.togglePanel()">&#x2715;</button>
+    </div>
+    <div id="highlight-panel-body">
+      <div id="highlight-panel-empty">暂无划线，点击划线模式按钮开始标注</div>
+    </div>
+    <div id="highlight-stats">
+      <span id="highlight-stats-text">共 0 条划线</span>
+      <span id="highlight-panel-clear" onclick="aiHighlight.clearAll()">清空全部</span>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/data/menu-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/highlight-engine.js?v=20260902c"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260901"></script>
+
+  <script>
+    // ============ 配置 ============
+    // Worker 地址（部署后从 wrangler deploy 输出里拿到）
+    // Worker 专用子域名（workers.dev 国内被墙不能用；Worker 已绑 Custom Domain，Worker 端已开 CORS）
+    const WORKER_URL = 'https://api.ai-college-study.com';
+
+    const LEVEL_META = {
+      1: { label: 'Level 1 · CET-4', cls: 'badge-l1' },
+      2: { label: 'Level 2 · CET-6', cls: 'badge-l2' },
+      3: { label: 'Level 3 · CET-6+', cls: 'badge-l3' }
+    };
+    const QTYPE_LABELS = {
+      detail: 'Detail', main: 'Main Idea', inference: 'Inference',
+      attitude: "Author's Attitude", guess: 'Word Guessing'
+    };
+
+    // ============ 状态 ============
+    let selectedLevel = null;
+    let currentLesson = null;
+    let userAnswers = {};
+    let checked = false;
+
+    // ============ 划线引擎（与 reading.html 同一套交互/数据格式） ============
+    // 注意：面板删除按钮的 onclick 写死调 aiHighlight.xxx，必须挂到 window 上
+    const aiHighlight = HighlightEngine.create({ containerId: 'lesson-content' });
+    window.aiHighlight = aiHighlight;
+
+    /** 一键把学案词汇在正文中标黄（已标记过/文中没有的词自动跳过） */
+    function autoMarkVocab() {
+      if (!currentLesson || !Array.isArray(currentLesson.vocabulary)) return;
+      aiHighlight.autoMark(currentLesson.vocabulary.map(v => v.word));
+    }
+
+    // ============ 初始化 ============
+    document.addEventListener('DOMContentLoaded', function () {
+      currentActivePage = 'ai-lesson';
+      renderMenu();
+
+      // 默认挡位跟随备考模式：四级→Level 1，六级→Level 2
+      const prep = api.getPrepLevel();
+      const defaultLevel = prep === 'CET-4' ? 1 : 2;
+      selectLevel(defaultLevel, true);
+      renderHistoryPreview();
+      refreshLevelCards();
+    });
+
+    // ============ 挡位选择 ============
+    function selectLevel(level, silent) {
+      selectedLevel = level;
+      [1, 2, 3].forEach(n => {
+        const card = document.getElementById('level-card-' + n);
+        card.classList.remove('active-l1', 'active-l2', 'active-l3');
+        if (n === level) card.classList.add('active-l' + level);
+      });
+      if (!silent) showToast(`已选择 ${LEVEL_META[level].label}`, 'info');
+    }
+
+    // ============ 生成学案 ============
+    function todayStr() {
+      const d = new Date(Date.now() + 8 * 3600 * 1000);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function showView(name) {
+      ['select-view', 'loading-view', 'error-view', 'lesson-view'].forEach(id => {
+        document.getElementById(id).classList.toggle('hidden', id !== name + '-view');
+      });
+      window.scrollTo({ top: 0 });
+    }
+
+    // ============ 今日已生成挡位置灰 ============
+    function refreshLevelCards() {
+      const today = todayStr();
+      [1, 2, 3].forEach(n => {
+        const card = document.getElementById('level-card-' + n);
+        if (!card) return;
+        const badge = card.querySelector('.done-badge');
+        const done = !!storage.get('aiLesson_' + today + '_' + n, null);
+        card.classList.toggle('done', done);
+        if (badge) badge.style.display = done ? '' : 'none';
+      });
+    }
+
+    // ============ 生成过程可视化（分步进度） ============
+    const LOADING_STEPS = [
+      '连接 China Daily，抓取今日外刊文章…',
+      '解析网页，清洗正文并切分段落…',
+      'AI 精读全文，挑选核心考试词汇…',
+      'AI 编写释义、例句与近义词辨析…',
+      'AI 出题：阅读理解 + 答案解析…',
+      '组装学案，检查格式…'
+    ];
+    let loadingStepTimer = null;
+    let loadingStepIdx = -1;
+
+    function renderLoadingSteps() {
+      document.getElementById('loading-steps').innerHTML = LOADING_STEPS.map((s, i) => `
+        <div class="load-step" id="load-step-${i}">
+          <span class="material-symbols-outlined step-icon">radio_button_unchecked</span>
+          <span>${s}</span>
+        </div>`).join('');
+    }
+
+    function setStepState(i, state) {
+      const el = document.getElementById('load-step-' + i);
+      if (!el) return;
+      el.classList.remove('active', 'done');
+      if (state) el.classList.add(state);
+      el.querySelector('.step-icon').textContent =
+        state === 'done' ? 'check_circle'
+        : state === 'active' ? 'progress_activity'
+        : 'radio_button_unchecked';
+    }
+
+    function advanceLoadingStep() {
+      if (loadingStepIdx >= 0) setStepState(loadingStepIdx, 'done');
+      loadingStepIdx++;
+      if (loadingStepIdx >= LOADING_STEPS.length) return;  // 走完后停在最后一步等待返回
+      setStepState(loadingStepIdx, 'active');
+      loadingStepTimer = setTimeout(advanceLoadingStep, 2200 + Math.random() * 1600);
+    }
+
+    function startLoadingSteps() {
+      stopLoadingSteps();
+      loadingStepIdx = -1;
+      renderLoadingSteps();
+      advanceLoadingStep();
+    }
+
+    function stopLoadingSteps() {
+      if (loadingStepTimer) { clearTimeout(loadingStepTimer); loadingStepTimer = null; }
+    }
+
+    function finishLoadingSteps() {
+      stopLoadingSteps();
+      for (let i = 0; i < LOADING_STEPS.length; i++) setStepState(i, 'done');
+    }
+
+    async function generateLesson() {
+      // AI 生成是登录专属功能：未登录直接弹登录框
+      if (!api.isLoggedIn()) {
+        showToast('AI 外刊精读需要登录后使用，请先登录', 'warning');
+        if (typeof setAuthMode === 'function') setAuthMode('login');
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+      }
+      if (!selectedLevel) { showToast('请先选择一个难度挡位', 'warning'); return; }
+
+      // 本地也有当天缓存：直接秒开（避免重复请求 Worker）
+      const localKey = 'aiLesson_' + todayStr() + '_' + selectedLevel;
+      const local = storage.get(localKey, null);
+      if (local) {
+        showToast('今天这个级别已经生成过了，直接为你打开', 'info');
+        renderLesson(local);
+        return;
+      }
+
+      showView('loading');
+      document.getElementById('loading-title').textContent =
+        `Generating your Level ${selectedLevel} lesson...`;
+      document.getElementById('loading-hint').textContent =
+        '正在从 China Daily 抓取今天的文章并用 AI 出题，约需 10~20 秒';
+      startLoadingSteps();
+
+      try {
+        const res = await fetch(`${WORKER_URL}/api/lesson?level=${selectedLevel}`);
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+
+        finishLoadingSteps();
+
+        // 存到 localStorage（当天秒开）并渲染
+        storage.set(localKey, data.lesson);
+        renderLesson(data.lesson);
+      } catch (e) {
+        stopLoadingSteps();
+        document.getElementById('error-message').textContent = e.message;
+        showView('error');
+      }
+    }
+
+    // ============ 打开历史学案（点击"最近学案"记录进入） ============
+    async function openHistoryLesson(level, lessonDate) {
+      if (!level || !lessonDate) {
+        showToast('这条记录太旧，没有保留文章信息', 'warning');
+        return;
+      }
+
+      // 本地有缓存直接打开
+      const local = storage.get('aiLesson_' + lessonDate + '_' + level, null);
+      if (local) { renderLesson(local); return; }
+
+      // 近 7 天的学案可从云端缓存取回（只读，不重新生成）
+      showView('loading');
+      document.getElementById('loading-title').textContent = 'Loading lesson...';
+      document.getElementById('loading-hint').textContent =
+        `正在取回 ${lessonDate} 的 Level ${level} 学案…`;
+      document.getElementById('loading-steps').innerHTML = '';
+
+      try {
+        const res = await fetch(`${WORKER_URL}/api/lesson?level=${level}&date=${lessonDate}`);
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+
+        storage.set('aiLesson_' + data.lesson.date + '_' + data.lesson.level, data.lesson);
+        renderLesson(data.lesson);
+      } catch (e) {
+        document.getElementById('error-message').textContent =
+          '这篇学案的内容已超过 7 天保留期，现在只能看到当时的成绩记录。';
+        showView('error');
+      }
+    }
+
+    // ============ 渲染学案 ============
+    function renderLesson(lesson) {
+      currentLesson = lesson;
+      userAnswers = {};
+      checked = false;
+
+      // 生成/打开学案即记入历史（未提交状态，只写本地；提交成绩时才同步云端）
+      api.upsertRecord('aiReading', {
+        itemId: lesson.id,
+        level: lesson.level,
+        title: lesson.title,
+        lessonDate: lesson.date,
+        date: new Date().toISOString()
+      }, r => r.itemId === lesson.id && r.lessonDate === lesson.date, { skipSync: true });
+
+      const meta = LEVEL_META[lesson.level] || LEVEL_META[1];
+      const badge = document.getElementById('lesson-level-badge');
+      badge.textContent = meta.label;
+      badge.className = 'ai-badge rounded-full px-3 py-1 text-label-sm font-semibold ' + meta.cls;
+
+      document.getElementById('lesson-date').textContent = lesson.date;
+      document.getElementById('lesson-meta').textContent =
+        `${lesson.wordCount} words · ${lesson.source}`;
+      document.getElementById('lesson-title').textContent = lesson.title;
+      document.getElementById('lesson-topic').textContent = lesson.topic || '';
+
+      const sourceLink = document.getElementById('lesson-source');
+      sourceLink.href = lesson.sourceUrl || '#';
+      sourceLink.textContent = lesson.source;
+
+      // 中文摘要：Level 3 隐藏（全英沉浸）
+      const summaryBox = document.getElementById('summary-box');
+      if (lesson.summaryCn) {
+        document.getElementById('lesson-summary').textContent = lesson.summaryCn;
+        summaryBox.style.display = '';
+      } else {
+        summaryBox.style.display = 'none';
+      }
+
+      // 正文
+      document.getElementById('lesson-content').innerHTML =
+        lesson.paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('');
+
+      // 正文已渲染，加载该学案的划线（articleId 用 lesson.id，如 ai_1_2026-09-02）
+      aiHighlight.load(lesson.id);
+
+      // 核心句
+      const keyBox = document.getElementById('key-sentence-box');
+      if (lesson.keySentence) {
+        document.getElementById('lesson-key-sentence').textContent = lesson.keySentence;
+        keyBox.style.display = '';
+      } else {
+        keyBox.style.display = 'none';
+      }
+
+      // 词汇卡片
+      document.getElementById('vocab-list').innerHTML = lesson.vocabulary.map(v => {
+        const lines = [];
+        if (v.phonetic) lines.push(`<span class="text-label-sm text-outline">${escapeHtml(v.phonetic)}${v.pos ? ' · ' + escapeHtml(v.pos) : ''}</span>`);
+        if (v.meaningCn) lines.push(`<p class="text-body-md text-on-surface">中文释义：${escapeHtml(v.meaningCn)}</p>`);
+        if (v.meaningEn) lines.push(`<p class="text-body-md text-on-surface">English: ${escapeHtml(v.meaningEn)}</p>`);
+        if (v.synonyms && v.synonyms.length) lines.push(`<p class="text-body-md text-on-surface-variant">近义词：${escapeHtml(v.synonyms.join ? v.synonyms.join('；') : String(v.synonyms))}</p>`);
+        if (v.example) lines.push(`<p class="text-body-md text-primary italic mt-1">${escapeHtml(v.example)}</p>`);
+        return `
+        <div class="bg-surface-container rounded-lg p-4">
+          <p class="font-title-md text-title-md text-on-surface mb-1">${escapeHtml(v.word)}</p>
+          ${lines.join('')}
+        </div>`;
+      }).join('');
+
+      // 题目
+      document.getElementById('quiz-actions').style.display = '';
+      document.getElementById('result-box').classList.add('hidden');
+      document.getElementById('question-list').innerHTML = lesson.questions.map((q, index) => `
+        <div class="border border-outline-variant rounded-xl p-6" id="question-${index}">
+          <div class="flex items-start gap-3 mb-stack-md">
+            <span class="ai-badge ai-badge--primary">Q${index + 1}</span>
+            ${q.qtype ? `<span class="ai-badge" style="background:var(--ai-surface-container-high,#e6e8ea);color:var(--ai-on-surface-variant,#434655);">${QTYPE_LABELS[q.qtype] || q.qtype}</span>` : ''}
+            <p class="text-body-lg text-on-surface flex-1">${escapeHtml(q.question)}</p>
+          </div>
+          <div class="space-y-sm">
+            ${q.options.map((opt, i) => `
+              <label class="quiz-option flex items-center gap-3 p-4 rounded-lg border border-outline-variant"
+                     id="option-${index}-${i}" onclick="selectOption(${index}, ${i})">
+                <span class="text-body-md text-on-surface">${String.fromCharCode(65 + i)}. ${escapeHtml(opt)}</span>
+              </label>
+            `).join('')}
+          </div>
+          <div class="hidden mt-stack-md" id="explanation-${index}">
+            <div class="bg-surface-container-high rounded-lg p-4">
+              <p class="text-label-sm text-outline mb-1">答案解析</p>
+              <p class="text-body-md text-on-surface-variant">${escapeHtml(q.explanation || '')}</p>
+              <p class="text-body-md text-secondary mt-2">正确答案: ${String.fromCharCode(65 + q.answer)}</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // 生成/打开成功后刷新挡位卡片（今天已生成过的显示置灰）
+      refreshLevelCards();
+
+      showView('lesson');
+    }
+
+    // ============ 答题 ============
+    function selectOption(qIndex, optIndex) {
+      if (checked) return;
+      userAnswers[qIndex] = optIndex;
+      for (let i = 0; i < 4; i++) {
+        const el = document.getElementById(`option-${qIndex}-${i}`);
+        el.classList.toggle('selected', i === optIndex);
+      }
+    }
+
+    function submitAnswers() {
+      if (checked) return;
+      const questions = currentLesson.questions;
+      if (Object.keys(userAnswers).length === 0) {
+        showToast('请先完成题目再提交！', 'error');
+        return;
+      }
+
+      checked = true;
+      let correctCount = 0;
+      questions.forEach((q, index) => {
+        const userAnswer = userAnswers[index];
+        if (userAnswer === q.answer) correctCount++;
+        const el = document.getElementById(`option-${index}-${userAnswer}`);
+        if (userAnswer === q.answer) {
+          if (el) el.classList.add('correct');
+        } else {
+          if (el) el.classList.add('incorrect');
+          const correctEl = document.getElementById(`option-${index}-${q.answer}`);
+          if (correctEl) correctEl.classList.add('correct');
+        }
+        const exp = document.getElementById(`explanation-${index}`);
+        if (exp) exp.classList.remove('hidden');
+      });
+
+      const percentage = Math.round((correctCount / questions.length) * 100);
+      document.getElementById('score-percentage').textContent = percentage + '%';
+      document.getElementById('score-detail').textContent =
+        `答对 ${correctCount}/${questions.length} 题`;
+      document.getElementById('result-box').classList.remove('hidden');
+      document.getElementById('quiz-actions').style.display = 'none';
+      document.getElementById('result-box').scrollIntoView({ behavior: 'smooth' });
+
+      // 保存成绩（合并进生成时已建的这条历史，本地 + 登录后写穿同步到 Supabase）
+      api.upsertRecord('aiReading', {
+        percentage,
+        correctCount,
+        total: questions.length,
+        date: new Date().toISOString()
+      }, r => r.itemId === currentLesson.id && r.lessonDate === currentLesson.date);
+
+      showToast(`提交成功！正确率 ${percentage}%`, percentage >= 60 ? 'success' : 'info');
+      renderHistoryPreview();
+    }
+
+    function retryQuiz() {
+      checked = false;
+      userAnswers = {};
+      renderLesson(currentLesson);
+    }
+
+    // ============ 历史 ============
+    function renderHistoryPreview() {
+      const box = document.getElementById('history-preview');
+      const records = api.getRecords('aiReading');
+      if (!records.length) { box.innerHTML = ''; return; }
+
+      box.innerHTML = `
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-6">
+          <h4 class="font-title-md text-title-md text-on-surface mb-3">Recent Lessons</h4>
+          ${records.slice(-5).reverse().map(r => `
+            <div class="flex items-center justify-between py-2 border-b border-outline-variant last:border-0 cursor-pointer hover:bg-surface-container-high rounded-lg transition-colors"
+                 title="点击进入这篇学案"
+                 onclick="openHistoryLesson(${r.level || 0}, '${r.lessonDate || ''}')">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="ai-badge rounded-full px-2 py-0.5 text-label-sm ${LEVEL_META[r.level] ? LEVEL_META[r.level].cls : 'badge-l1'}">L${r.level}</span>
+                <span class="text-body-md text-on-surface truncate">${escapeHtml(r.title || '')}</span>
+              </div>
+              <span class="text-label-sm text-outline ml-3 whitespace-nowrap flex items-center gap-1">
+                ${r.percentage != null ? r.percentage + '%' : '未提交'} · ${escapeHtml(r.lessonDate || (r.date || '').slice(0, 10))}
+                <span class="material-symbols-outlined text-sm">chevron_right</span>
+              </span>
+            </div>
+          `).join('')}
+        </div>`;
+    }
+
+    function showHistory() {
+      const records = api.getRecords('aiReading');
+      if (!records.length) {
+        showToast('还没有学案记录，先生成一篇吧！', 'info');
+        return;
+      }
+      const done = records.filter(r => r.percentage != null);
+      if (!done.length) {
+        showToast(`已生成 ${records.length} 篇学案，还没有提交过答题`, 'info');
+        return;
+      }
+      const avg = Math.round(done.reduce((s, r) => s + r.percentage, 0) / done.length);
+      showToast(`已生成 ${records.length} 篇，完成 ${done.length} 篇，平均正确率 ${avg}%`, 'success');
+    }
+
+    function backToSelect() {
+      // 收起划线面板/模式，避免残留到下一次视图切换（引擎内部 mode 由下次 load() 重置）
+      aiHighlight.closePanel();
+      const contentEl = document.getElementById('lesson-content');
+      if (contentEl) contentEl.classList.remove('mark-mode');
+      document.getElementById('highlight-toggle-btn').classList.remove('highlight-active');
+      document.getElementById('highlight-color-picker').classList.remove('open');
+      renderHistoryPreview();
+      refreshLevelCards();
+      showView('select');
+    }
+
+    // ============ 工具 ============
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text == null ? '' : String(text);
+      return div.innerHTML;
+    }
+  </script>
+
+</body>
+</html>

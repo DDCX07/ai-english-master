@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - Mock Exam</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff", "tertiary": "#784b00", "on-error": "#ffffff",
+            "primary-container": "#2563eb", "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655", "primary": "#004ac6",
+            "secondary": "#006c49", "primary-fixed": "#dbe1ff",
+            "outline": "#737686", "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc", "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff", "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700", "on-surface": "#191c1e",
+            "tertiary-container": "#996100", "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f", "on-background": "#191c1e",
+            "inverse-on-surface": "#eff1f3", "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00", "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133", "error-container": "#ffdad6",
+            "background": "#f7f9fb", "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff", "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd", "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236", "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d", "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb", "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db", "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8", "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a", "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px", "stack-lg": "32px", "stack-sm": "8px",
+            "margin-desktop": "40px", "container-max": "1280px",
+            "margin-mobile": "16px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"],
+            "body-lg": ["Inter"], "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .quiz-option {
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .quiz-option:hover {
+      border-color: var(--ai-primary, #004ac6);
+      background-color: rgba(0, 74, 198, 0.05);
+    }
+
+    .quiz-option.selected {
+      border-color: var(--ai-primary, #004ac6);
+      background-color: rgba(0, 74, 198, 0.1);
+    }
+
+    .timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .timer.warning {
+      color: var(--ai-tertiary, #784b00);
+      animation: pulse 1s infinite;
+    }
+
+    .timer.critical {
+      color: var(--ai-error, #ba1a1a);
+      animation: pulse 0.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .question-nav-btn {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--ai-outline-variant, #c3c6d7);
+      background: var(--ai-surface-container-lowest, #ffffff);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .question-nav-btn.answered {
+      background-color: var(--ai-primary, #004ac6);
+      color: white;
+      border-color: var(--ai-primary, #004ac6);
+    }
+
+    .question-nav-btn.current {
+      border-color: var(--ai-tertiary, #784b00);
+      border-width: 2px;
+    }
+
+    .question-nav-btn:hover {
+      border-color: var(--ai-primary, #004ac6);
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- 侧边栏导航 -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">Mock Exam Mode</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <div class="px-margin-mobile mb-stack-md">
+        <p class="text-label-sm text-outline">Question Navigation</p>
+      </div>
+      <div class="px-margin-mobile grid grid-cols-4 gap-2" id="question-nav">
+        <!-- 题目导航按钮会通过JS生成 -->
+      </div>
+    </div>
+
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <button class="ai-button ai-button--primary ai-button--full" onclick="confirmSubmit()">
+        Submit Exam
+      </button>
+      <div class="mt-stack-md text-center">
+        <p class="text-label-sm text-outline">Answered: <span id="answered-count">0</span>/<span id="total-count">20</span></p>
+      </div>
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary">
+          CET-6 Mock Exam
+        </h2>
+        <span class="ai-badge ai-badge--secondary">Reading · Real Exams</span>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-outline">timer</span>
+          <span class="timer text-primary" id="exam-timer">60:00</span>
+        </div>
+        <button class="ai-icon-btn" onclick="toggleFlag()">
+          <span class="material-symbols-outlined" id="flag-icon">flag</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto w-full" id="exam-content">
+      <!-- 考试开始界面 -->
+      <div id="start-screen" class="flex items-center justify-center min-h-[500px]">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-12 max-w-2xl w-full text-center">
+          <div class="mb-stack-lg">
+            <span class="material-symbols-outlined text-[64px] text-primary">quiz</span>
+          </div>
+          <h2 class="font-headline-lg text-headline-lg text-on-surface mb-stack-md">CET-6 Mock Examination</h2>
+          <div class="bg-surface-container rounded-lg p-6 mb-stack-lg text-left">
+            <h3 class="font-title-md text-title-md text-on-surface mb-stack-md">Exam Information</h3>
+            <div class="space-y-sm">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-outline">schedule</span>
+                <span class="text-body-md text-on-surface-variant" id="info-duration">Duration: 40 minutes</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-outline">help</span>
+                <span class="text-body-md text-on-surface-variant" id="info-total">Total Questions: 30</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-outline">school</span>
+                <span class="text-body-md text-on-surface-variant">Level: CET-6</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-outline">stars</span>
+                <span class="text-body-md text-on-surface-variant">Passing Score: 60%</span>
+              </div>
+            </div>
+          </div>
+          <div class="bg-surface-container-high rounded-lg p-4 mb-stack-lg">
+            <p class="text-body-md text-on-surface-variant">
+              <strong>Instructions:</strong> Read each question carefully and select the best answer. You can navigate between questions freely. The exam will be automatically submitted when time expires.
+            </p>
+          </div>
+          <button class="ai-button ai-button--primary ai-button--full" onclick="startExam()">
+            <span class="material-symbols-outlined">play_arrow</span>
+            <span>Start Exam</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 题目区域（默认隐藏） -->
+      <div id="questions-container" class="hidden">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg" id="current-question">
+          <!-- 当前题目会通过JS动态加载 -->
+        </div>
+
+        <!-- 导航按钮 -->
+        <div class="flex items-center justify-between">
+          <button class="ai-button ai-button--secondary" onclick="previousQuestion()" id="prev-btn">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <span>Previous</span>
+          </button>
+          <button class="ai-button ai-button--primary" onclick="nextQuestion()" id="next-btn">
+            <span>Next</span>
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 结果界面（默认隐藏） -->
+      <div id="result-screen" class="hidden">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-12 max-w-2xl w-full mx-auto text-center">
+          <div class="mb-stack-lg">
+            <span class="material-symbols-outlined text-[64px]" id="result-icon">emoji_events</span>
+          </div>
+          <h2 class="font-headline-lg text-headline-lg text-on-surface mb-stack-md" id="result-title">Exam Completed!</h2>
+          <div class="grid grid-cols-3 gap-gutter mb-stack-lg">
+            <div class="text-center">
+              <p class="text-label-sm text-outline mb-1">Your Score</p>
+              <p class="font-headline-lg text-headline-lg text-primary" id="final-score">0%</p>
+            </div>
+            <div class="text-center">
+              <p class="text-label-sm text-outline mb-1">Correct</p>
+              <p class="font-headline-lg text-headline-lg text-secondary" id="final-correct">0/20</p>
+            </div>
+            <div class="text-center">
+              <p class="text-label-sm text-outline mb-1">Time Used</p>
+              <p class="font-headline-lg text-headline-lg text-tertiary" id="final-time">0:00</p>
+            </div>
+          </div>
+          <div class="bg-surface-container rounded-lg p-4 mb-stack-lg" id="result-message">
+            <p class="text-body-md text-on-surface-variant"></p>
+          </div>
+          <div class="flex gap-4 justify-center">
+            <button class="ai-button ai-button--secondary" onclick="reviewAnswers()">
+              <span class="material-symbols-outlined">visibility</span>
+              <span>Review Answers</span>
+            </button>
+            <button class="ai-button ai-button--primary" onclick="resetExam()">
+              <span class="material-symbols-outlined">refresh</span>
+              <span>Try Again</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/data/menu-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260830b"></script>
+  <script src="js/data/exam-data.js"></script>
+
+  <script>
+    // 考试状态
+    let examStarted = false;
+    let examSubmitted = false;
+    let currentQuestionIndex = 0;
+    let userAnswers = {};
+    let flaggedQuestions = new Set();
+    let timerInterval = null;
+    let timeRemaining = examData.duration * 60;
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+      currentActivePage = 'mock-exam';
+      renderMenu();
+      document.getElementById('total-count').textContent = examData.questions.length;
+      document.getElementById('info-total').textContent = 'Total Questions: ' + examData.questions.length;
+      document.getElementById('info-duration').textContent = 'Duration: ' + examData.duration + ' minutes';
+      updateTimerDisplay();
+    });
+
+    // 更新计时器显示（不改变剩余时间）
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeRemaining / 60);
+      const seconds = timeRemaining % 60;
+      document.getElementById('exam-timer').textContent =
+        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // 开始考试
+    function startExam() {
+      if (!confirm('Are you ready to start the exam? Once started, the timer cannot be paused.')) {
+        return;
+      }
+
+      examStarted = true;
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('questions-container').classList.remove('hidden');
+
+      // 生成题目导航
+      renderQuestionNav();
+      loadQuestion(0);
+      startTimer();
+    }
+
+    // 渲染题目导航
+    function renderQuestionNav() {
+      const container = document.getElementById('question-nav');
+      container.innerHTML = examData.questions.map((_, index) => `
+        <button class="question-nav-btn ${index === 0 ? 'current' : ''}"
+                onclick="goToQuestion(${index})"
+                id="nav-btn-${index}">
+          ${index + 1}
+        </button>
+      `).join('');
+    }
+
+    // 加载题目
+    function loadQuestion(index) {
+      currentQuestionIndex = index;
+      const question = examData.questions[index];
+
+      // 更新当前题目显示
+      const container = document.getElementById('current-question');
+      container.innerHTML = `
+        <div class="flex items-center gap-3 mb-stack-md">
+          <span class="ai-badge ai-badge--primary">Question ${index + 1}</span>
+          ${question.source ? `<span class="ai-badge">${question.source}</span>` : ''}
+          ${question.level ? `<span class="ai-badge">${question.level}</span>` : ''}
+          ${flaggedQuestions.has(index) ? '<span class="ai-badge ai-badge--warning"><span class="material-symbols-outlined text-sm">flag</span> Flagged</span>' : ''}
+        </div>
+        <p class="text-body-lg text-on-surface mb-stack-md">${question.question}</p>
+        <div class="space-y-sm">
+          ${question.options.map((option, optIndex) => `
+            <label class="quiz-option flex items-center gap-3 p-4 rounded-lg border border-outline-variant cursor-pointer"
+                   id="option-${optIndex}"
+                   onclick="selectAnswer(${optIndex})">
+              <input type="radio" name="answer" value="${optIndex}" class="ai-checkbox"
+                     ${userAnswers[index] === optIndex ? 'checked' : ''}/>
+              <span class="text-body-md text-on-surface">${String.fromCharCode(65 + optIndex)}. ${option}</span>
+            </label>
+          `).join('')}
+        </div>
+      `;
+
+      // 更新导航按钮状态
+      document.querySelectorAll('.question-nav-btn').forEach((btn, idx) => {
+        btn.classList.remove('current');
+        if (idx === index) btn.classList.add('current');
+      });
+
+      // 更新前后按钮状态
+      document.getElementById('prev-btn').disabled = index === 0;
+      document.getElementById('next-btn').textContent = index === examData.questions.length - 1 ? 'Finish' : 'Next';
+
+      // 更新标记图标
+      document.getElementById('flag-icon').textContent = flaggedQuestions.has(index) ? 'flag' : 'flag';
+      document.getElementById('flag-icon').style.color = flaggedQuestions.has(index) ? 'var(--ai-tertiary, #784b00)' : '';
+    }
+
+    // 选择答案
+    function selectAnswer(optionIndex) {
+      userAnswers[currentQuestionIndex] = optionIndex;
+
+      // 更新UI
+      document.querySelectorAll('.quiz-option').forEach((opt, idx) => {
+        opt.classList.remove('selected');
+        if (idx === optionIndex) {
+          opt.classList.add('selected');
+          opt.querySelector('input').checked = true;
+        }
+      });
+
+      // 标记为已回答
+      const navBtn = document.getElementById(`nav-btn-${currentQuestionIndex}`);
+      if (navBtn && !navBtn.classList.contains('answered')) {
+        navBtn.classList.add('answered');
+      }
+
+      // 更新计数
+      updateAnsweredCount();
+    }
+
+    // 更新已答题数
+    function updateAnsweredCount() {
+      const answered = Object.keys(userAnswers).length;
+      document.getElementById('answered-count').textContent = answered;
+    }
+
+    // 下一题
+    function nextQuestion() {
+      if (currentQuestionIndex < examData.questions.length - 1) {
+        goToQuestion(currentQuestionIndex + 1);
+      } else {
+        // 最后一题，询问是否提交
+        confirmSubmit();
+      }
+    }
+
+    // 上一题
+    function previousQuestion() {
+      if (currentQuestionIndex > 0) {
+        goToQuestion(currentQuestionIndex - 1);
+      }
+    }
+
+    // 跳转到指定题目
+    function goToQuestion(index) {
+      loadQuestion(index);
+    }
+
+    // 标记题目
+    function toggleFlag() {
+      if (flaggedQuestions.has(currentQuestionIndex)) {
+        flaggedQuestions.delete(currentQuestionIndex);
+      } else {
+        flaggedQuestions.add(currentQuestionIndex);
+      }
+      loadQuestion(currentQuestionIndex);
+    }
+
+    // 计时器
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+
+        const timerElement = document.getElementById('exam-timer');
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        // 警告状态
+        timerElement.classList.remove('warning', 'critical');
+        if (timeRemaining <= 300) { // 5分钟
+          timerElement.classList.add('critical');
+        } else if (timeRemaining <= 600) { // 10分钟
+          timerElement.classList.add('warning');
+        }
+
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          submitExam();
+          showToast('时间到！考试已自动提交。', 'warning');
+        }
+      }, 1000);
+    }
+
+    // 确认提交
+    function confirmSubmit() {
+      const answered = Object.keys(userAnswers).length;
+      const total = examData.questions.length;
+      const message = answered === total
+        ? '你已经完成了所有题目，确认提交吗？'
+        : `你还有 ${total - answered} 道题目未完成，确认提交吗？`;
+
+      if (confirm(message)) {
+        submitExam();
+      }
+    }
+
+    // 提交考试
+    function submitExam() {
+      if (examSubmitted) return;
+      examSubmitted = true;
+
+      stopTimer();
+
+      // 计算分数
+      let correctCount = 0;
+      examData.questions.forEach((q, index) => {
+        if (userAnswers[index] === q.correctAnswer) {
+          correctCount++;
+        }
+      });
+
+      const percentage = Math.round((correctCount / examData.questions.length) * 100);
+      const timeUsed = examData.duration * 60 - timeRemaining;
+      const minutes = Math.floor(timeUsed / 60);
+      const seconds = timeUsed % 60;
+
+      // 显示结果
+      document.getElementById('questions-container').classList.add('hidden');
+      document.getElementById('result-screen').classList.remove('hidden');
+      document.getElementById('final-score').textContent = percentage + '%';
+      document.getElementById('final-correct').textContent = `${correctCount}/${examData.questions.length}`;
+      document.getElementById('final-time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+      // 设置结果图标和标题
+      const icon = document.getElementById('result-icon');
+      const title = document.getElementById('result-title');
+      const message = document.getElementById('result-message');
+
+      if (percentage >= 80) {
+        icon.textContent = 'emoji_events';
+        icon.style.color = 'var(--ai-secondary, #006c49)';
+        title.textContent = 'Excellent!';
+        message.innerHTML = '<p class="text-body-md text-secondary">太棒了！你的英语水平很优秀！🎉</p>';
+      } else if (percentage >= 60) {
+        icon.textContent = 'thumb_up';
+        icon.style.color = 'var(--ai-primary, #004ac6)';
+        title.textContent = 'Good Job!';
+        message.innerHTML = '<p class="text-body-md text-primary">恭喜通过！继续加油！💪</p>';
+      } else {
+        icon.textContent = 'school';
+        icon.style.color = 'var(--ai-error, #ba1a1a)';
+        title.textContent = 'Keep Trying!';
+        message.innerHTML = '<p class="text-body-md text-error">还需要多加练习，不要放弃！📚</p>';
+      }
+
+      // 保存成绩
+      api.addRecord('mockExam', {
+        percentage,
+        correctCount,
+        total: examData.questions.length,
+        timeUsed,
+        date: new Date().toISOString()
+      });
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    // 查看答案
+    function reviewAnswers() {
+      // 这里可以实现查看答案详情的功能
+      showToast('答案详情功能开发中...', 'info');
+    }
+
+    // 重置考试
+    function resetExam() {
+      examStarted = false;
+      examSubmitted = false;
+      currentQuestionIndex = 0;
+      userAnswers = {};
+      flaggedQuestions.clear();
+      timeRemaining = examData.duration * 60;
+
+      document.getElementById('start-screen').classList.remove('hidden');
+      document.getElementById('questions-container').classList.add('hidden');
+      document.getElementById('result-screen').classList.add('hidden');
+
+      renderQuestionNav();
+      updateAnsweredCount();
+
+      // 重置计时器显示
+      document.getElementById('exam-timer').classList.remove('warning', 'critical');
+      updateTimerDisplay();
+    }
+  </script>
+
+</body>
+</html>

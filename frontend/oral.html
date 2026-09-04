@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - Oral Practice</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff", "tertiary": "#784b00", "on-error": "#ffffff",
+            "primary-container": "#2563eb", "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655", "primary": "#004ac6",
+            "secondary": "#006c49", "primary-fixed": "#dbe1ff",
+            "outline": "#737686", "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc", "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff", "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700", "on-surface": "#191c1e",
+            "tertiary-container": "#996100", "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f", "on-background": "#191c1e",
+            "inverse-on-surface": "#eff1f3", "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00", "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133", "error-container": "#ffdad6",
+            "background": "#f7f9fb", "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff", "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd", "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236", "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d", "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb", "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db", "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8", "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a", "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px", "stack-lg": "32px", "stack-sm": "8px",
+            "margin-desktop": "40px", "container-max": "1280px",
+            "margin-mobile": "16px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"],
+            "body-lg": ["Inter"], "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* 录音按钮呼吸动画 */
+    .mic-btn.recording {
+      background-color: var(--ai-error, #ba1a1a) !important;
+      color: white !important;
+      animation: mic-pulse 1.2s infinite;
+    }
+
+    @keyframes mic-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(186, 26, 26, 0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(186, 26, 26, 0); }
+    }
+
+    /* 逐词对比高亮 */
+    .word-hit { color: var(--ai-secondary, #006c49); }
+    .word-miss {
+      color: var(--ai-error, #ba1a1a);
+      text-decoration: underline wavy var(--ai-error, #ba1a1a);
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- 侧边栏导航 -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">CET-6 Prep Mode</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list"></ul>
+    </div>
+
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary hidden md:block">
+          Oral Practice
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-outline">record_voice_over</span>
+          <span class="text-label-sm text-outline" id="oral-progress">0/18</span>
+        </div>
+        <button class="ai-button ai-button--secondary" onclick="showMyOralRecords()">
+          <span class="material-symbols-outlined">insights</span>
+          <span class="hidden md:inline">My Records</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto w-full">
+
+      <!-- 筛选区域 -->
+      <section class="mb-stack-lg">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-label-sm text-outline">Topic:</span>
+          <button class="ai-button ai-button--text active" data-cat="all" onclick="setOralFilter('all', this)">All</button>
+          <button class="ai-button ai-button--text" data-cat="日常场景" onclick="setOralFilter('日常场景', this)">日常场景</button>
+          <button class="ai-button ai-button--text" data-cat="校园生活" onclick="setOralFilter('校园生活', this)">校园生活</button>
+          <button class="ai-button ai-button--text" data-cat="职场沟通" onclick="setOralFilter('职场沟通', this)">职场沟通</button>
+          <button class="ai-button ai-button--text" data-cat="雅思口语" onclick="setOralFilter('雅思口语', this)">雅思口语</button>
+        </div>
+      </section>
+
+      <!-- 练习卡片 -->
+      <section class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 mb-stack-lg">
+        <!-- 进度 -->
+        <div class="flex items-center justify-between mb-stack-md">
+          <span class="ai-badge ai-badge--primary" id="current-badge">1 / 18</span>
+          <div class="flex items-center gap-2">
+            <span class="ai-badge" id="current-level">CET-4</span>
+            <span class="text-label-sm text-outline" id="current-category">日常场景</span>
+          </div>
+        </div>
+        <div class="ai-progress-bar mb-stack-lg">
+          <div class="ai-progress-bar__fill ai-progress-bar__fill--primary" id="progress-fill" style="width: 6%;"></div>
+        </div>
+
+        <!-- 朗读目标 -->
+        <div class="bg-surface-container rounded-lg p-6 mb-stack-md">
+          <p class="text-label-sm text-outline mb-2">Read the sentence below aloud（大声读出下面的句子）</p>
+          <p class="text-body-lg text-on-surface leading-relaxed" id="target-text">Target sentence</p>
+        </div>
+
+        <!-- 发音提示 -->
+        <div class="bg-tertiary-fixed-dim/30 border border-tertiary/30 rounded-lg p-4 mb-stack-md">
+          <div class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-tertiary">tips_and_updates</span>
+            <p class="text-body-md text-on-surface-variant" id="pronunciation-tip">Tip</p>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="flex items-center justify-center gap-6">
+          <button class="ai-button ai-button--secondary" onclick="listenToModel()">
+            <span class="material-symbols-outlined">volume_up</span>
+            <span>Listen First</span>
+          </button>
+
+          <button class="ai-icon-btn mic-btn bg-primary text-white hover:bg-primary/90"
+                  id="mic-btn" onclick="toggleRecording()"
+                  style="width: 72px; height: 72px; border-radius: 9999px;"
+                  title="点击开始录音，再点一次结束录音">
+            <span class="material-symbols-outlined" style="font-size: 36px;" id="mic-icon">mic</span>
+          </button>
+
+          <button class="ai-button ai-button--secondary" onclick="nextOralItem()">
+            <span>Next One</span>
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+
+        <p class="text-center text-label-sm text-outline mt-stack-md" id="mic-status">
+          点击麦克风开始录音，读完后再点一次结束（中途停顿不会中断）
+        </p>
+
+        <!-- 识别结果（默认隐藏） -->
+        <div class="hidden mt-stack-lg" id="oral-result">
+          <!-- 得分 -->
+          <div class="flex items-center gap-6 mb-stack-md">
+            <div class="text-center">
+              <p class="font-headline-lg text-headline-lg" id="oral-score">0%</p>
+              <p class="text-label-sm text-outline">Score</p>
+            </div>
+            <div class="flex-1">
+              <p class="text-body-md text-on-surface-variant" id="oral-comment"></p>
+            </div>
+          </div>
+
+          <!-- 识别文本 -->
+          <div class="bg-surface-container rounded-lg p-6 mb-stack-md">
+            <p class="text-label-sm text-outline mb-2">Recognition Result（系统听到的内容，绿色正确/红色未识别）</p>
+            <p class="text-body-lg leading-relaxed" id="diff-display"></p>
+          </div>
+
+          <!-- 再来一次 -->
+          <div class="flex justify-center">
+            <button class="ai-button ai-button--primary" onclick="retryOralItem()">
+              <span class="material-symbols-outlined">refresh</span>
+              <span>Record Again</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/data/menu-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260830b"></script>
+  <script src="js/data/oral-data.js"></script>
+
+  <script>
+    // 当前状态
+    let oralFilter = 'all';
+    let oralList = [];
+    let oralIndex = 0;
+    let recognition = null;
+    let isRecording = false;
+    let oralTranscript = '';   // 本次录音累计识别出的文字
+    let manualStop = false;    // 用户是否主动点击了"结束录音"
+    let micError = false;      // 是否发生权限等致命错误
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+      currentActivePage = 'oral-practice';
+      renderMenu();
+      loadOralList();
+
+      // 检查浏览器是否支持语音识别
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        document.getElementById('mic-status').textContent =
+          '当前浏览器不支持语音识别，请使用 Chrome 或 Edge。可以先点 Listen First 跟读模仿。';
+        document.getElementById('mic-btn').style.opacity = 0.4;
+        showToast('建议使用 Chrome / Edge 浏览器获得语音识别功能', 'warning');
+      }
+    });
+
+    // 加载题目列表
+    function loadOralList() {
+      oralList = oralFilter === 'all'
+        ? oralData.items
+        : oralData.items.filter(i => i.category === oralFilter);
+      oralIndex = 0;
+      loadOralItem();
+      document.getElementById('oral-progress').textContent = `0/${oralList.length}`;
+    }
+
+    function setOralFilter(cat, el) {
+      oralFilter = cat;
+      document.querySelectorAll('[data-cat]').forEach(btn => btn.classList.remove('active'));
+      if (el) el.classList.add('active');
+      loadOralList();
+    }
+
+    // 加载当前题目
+    function loadOralItem() {
+      const item = oralList[oralIndex];
+      document.getElementById('current-badge').textContent = `${oralIndex + 1} / ${oralList.length}`;
+      document.getElementById('current-level').textContent = item.level;
+      document.getElementById('current-category').textContent = item.category;
+      document.getElementById('progress-fill').style.width =
+        Math.round(((oralIndex + 1) / oralList.length) * 100) + '%';
+      document.getElementById('target-text').textContent = item.text;
+      document.getElementById('pronunciation-tip').textContent = item.tip;
+      document.getElementById('oral-result').classList.add('hidden');
+      document.getElementById('mic-status').textContent =
+        '点击麦克风开始录音，读完后再点一次结束（中途停顿不会中断）';
+    }
+
+    // 文本规范化：小写、去标点
+    function normalizeWords(text) {
+      return text.toLowerCase()
+        .replace(/[^a-z'\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 0);
+    }
+
+    // 开始/停止录音（点击开始，再次点击才结束——停顿不会中断录音）
+    function toggleRecording() {
+      if (isRecording) {
+        // 用户主动结束录音，onend 里会统一批改
+        manualStop = true;
+        stopRecording();
+        return;
+      }
+
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        showToast('当前浏览器不支持语音识别，请使用 Chrome 或 Edge', 'error');
+        return;
+      }
+
+      // 停掉示范朗读，避免干扰识别
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+
+      recognition = new SR();
+      recognition.lang = 'en-US';
+      recognition.continuous = true;      // 持续录音：说话停顿不会自动结束
+      recognition.interimResults = true;  // 实时返回中间结果，方便预览
+      recognition.maxAlternatives = 1;
+
+      oralTranscript = '';
+      manualStop = false;
+      micError = false;
+
+      recognition.onresult = (e) => {
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const r = e.results[i];
+          if (r.isFinal) {
+            oralTranscript += r[0].transcript + ' ';
+          } else {
+            interim += r[0].transcript;
+          }
+        }
+        // 实时显示识别进度，让用户知道系统正在听
+        const preview = (oralTranscript + interim).trim();
+        document.getElementById('mic-status').textContent =
+          '录音中……读完后再点一次麦克风结束' +
+          (preview ? ' ｜ 已识别: ' + preview.slice(0, 60) : '');
+      };
+
+      recognition.onerror = (e) => {
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+          micError = true;
+          showToast('麦克风权限被拒绝，请在浏览器地址栏允许麦克风访问', 'error');
+          document.getElementById('mic-status').textContent = '需要允许麦克风权限才能录音';
+        } else if (e.error === 'audio-capture') {
+          micError = true;
+          showToast('未检测到麦克风设备', 'error');
+          document.getElementById('mic-status').textContent = '未检测到麦克风设备';
+        }
+        // no-speech（说话间的停顿）在持续模式下是正常现象，录音会继续，不用处理
+      };
+
+      recognition.onend = () => {
+        isRecording = false;
+        document.getElementById('mic-btn').classList.remove('recording');
+        document.getElementById('mic-icon').textContent = 'mic';
+
+        if (micError) {
+          micError = false;
+          return; // 权限等致命错误已在 onerror 里提示过
+        }
+
+        if (manualStop) {
+          // 用户主动结束 → 批改
+          manualStop = false;
+          const text = oralTranscript.trim();
+          if (text) {
+            gradeOralResult(text);
+          } else {
+            document.getElementById('mic-status').textContent = '没有识别到语音，点击麦克风再试一次';
+          }
+        } else {
+          // 录音被系统中断（如麦克风被其他程序占用）
+          document.getElementById('mic-status').textContent = '录音中断，点击麦克风重新开始';
+        }
+      };
+
+      try {
+        recognition.start();
+        isRecording = true;
+        document.getElementById('mic-btn').classList.add('recording');
+        document.getElementById('mic-icon').textContent = 'stop';
+        document.getElementById('mic-status').textContent =
+          '录音中……读完后再点一次麦克风结束（中途停顿没关系）';
+        document.getElementById('oral-result').classList.add('hidden');
+      } catch (err) {
+        showToast('无法启动录音：' + err.message, 'error');
+      }
+    }
+
+    function stopRecording() {
+      if (recognition) {
+        try { recognition.stop(); } catch (e) { /* 忽略 */ }
+      }
+    }
+
+    // 评分：逐词对比目标句和识别结果
+    function gradeOralResult(transcript) {
+      const item = oralList[oralIndex];
+      const targetWords = normalizeWords(item.text);
+      const heardWords = normalizeWords(transcript);
+
+      // 统计识别到的词（可重复词按次数计数）
+      const heardPool = [...heardWords];
+      const marks = targetWords.map(w => {
+        const i = heardPool.indexOf(w);
+        if (i !== -1) {
+          heardPool.splice(i, 1);
+          return true;
+        }
+        return false;
+      });
+
+      const hits = marks.filter(Boolean).length;
+      const score = Math.round((hits / targetWords.length) * 100);
+
+      // 得分展示
+      const scoreEl = document.getElementById('oral-score');
+      scoreEl.textContent = score + '%';
+      scoreEl.className = 'font-headline-lg text-headline-lg ' +
+        (score >= 85 ? 'text-secondary' : score >= 60 ? 'text-tertiary' : 'text-error');
+
+      let comment;
+      if (score >= 95) {
+        comment = '太棒了！发音非常清晰，几乎没有识别错误。';
+      } else if (score >= 85) {
+        comment = '读得很好！个别词可以更清晰，注意下面标红的单词。';
+      } else if (score >= 60) {
+        comment = '不错，但有几个词没被识别到，可能是发音或连读问题，多读几遍试试。';
+      } else {
+        comment = '建议先点 Listen First 听几遍示范，再逐句跟读，放慢速度清晰发音。';
+      }
+      document.getElementById('oral-comment').textContent = comment;
+
+      // 逐词高亮：绿色=识别到，红色=没识别到
+      document.getElementById('diff-display').innerHTML =
+        targetWords.map((w, i) =>
+          `<span class="${marks[i] ? 'word-hit' : 'word-miss'}">${w}</span>`
+        ).join(' ');
+
+      document.getElementById('oral-result').classList.remove('hidden');
+      document.getElementById('oral-result').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('mic-status').textContent =
+        '识别完成！可以点 Record Again 重读，或 Next One 下一句';
+
+      // 保存记录
+      const history = api.addRecord('oral', {
+        itemId: item.id,
+        category: item.category,
+        score,
+        date: new Date().toISOString()
+      });
+      document.getElementById('oral-progress').textContent =
+        `${history.length}/${oralData.items.length}`;
+
+      showToast(`识别完成！得分: ${score}%`, score >= 85 ? 'success' : 'info');
+    }
+
+    // 再录一次
+    function retryOralItem() {
+      document.getElementById('oral-result').classList.add('hidden');
+      document.getElementById('mic-status').textContent =
+        '点击麦克风开始录音，读完后再点一次结束（中途停顿不会中断）';
+    }
+
+    // 听示范朗读
+    function listenToModel() {
+      if (!('speechSynthesis' in window)) {
+        showToast('当前浏览器不支持语音朗读', 'error');
+        return;
+      }
+      speechSynthesis.cancel();
+      const item = oralList[oralIndex];
+      const u = new SpeechSynthesisUtterance(item.text);
+      u.lang = 'en-US';
+      u.rate = 0.85; // 稍慢，便于跟读
+      u.onend = () => showToast('轮到你啦！点麦克风按钮开始录音', 'info');
+      speechSynthesis.speak(u);
+    }
+
+    // 下一题
+    function nextOralItem() {
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+      stopRecording();
+      if (oralIndex < oralList.length - 1) {
+        oralIndex++;
+        loadOralItem();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        const history = api.getRecords('oral');
+        const recent = history.slice(-oralList.length);
+        const avg = recent.length
+          ? Math.round(recent.reduce((s, h) => s + h.score, 0) / recent.length) : 0;
+        showToast(`本轮练习完成！平均得分 ${avg}%`, 'success');
+        oralIndex = 0;
+        loadOralItem();
+      }
+    }
+
+    // 我的记录
+    function showMyOralRecords() {
+      const history = api.getRecords('oral');
+      if (history.length === 0) {
+        showToast('还没有练习记录，先读一句吧！', 'info');
+        return;
+      }
+      const avg = Math.round(history.reduce((s, h) => s + h.score, 0) / history.length);
+      const best = Math.max(...history.map(h => h.score));
+      showToast(`共练习 ${history.length} 次，平均 ${avg}%，最高 ${best}%`, 'success');
+    }
+  </script>
+
+</body>
+</html>

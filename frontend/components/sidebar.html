@@ -1,0 +1,41 @@
+<!--
+  侧边栏导航组件 (Sidebar)
+  用法: 在你的HTML中引入这个文件
+-->
+<nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+
+  <!-- Logo区域 -->
+  <div class="px-gutter mb-stack-lg">
+    <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+    <p class="font-label-sm text-label-sm text-outline mt-1">CET-6 Prep Mode</p>
+  </div>
+
+  <!-- 菜单列表 -->
+  <div class="flex-1 overflow-y-auto">
+    <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list">
+      <!-- 菜单项会通过JS动态生成，但这里也可以手动写 -->
+    </ul>
+  </div>
+
+  <!-- 底部按钮和链接 -->
+  <div class="mt-auto px-margin-mobile pt-stack-md">
+    <button class="ai-button ai-button--primary ai-button--full" onclick="alert('开始模拟考试功能即将上线！')">
+      Start Mock Exam
+    </button>
+
+    <ul class="flex flex-col gap-2 mt-stack-md">
+      <li>
+        <a class="ai-menu-item" href="#" data-page="settings">
+          <span class="material-symbols-outlined">settings</span>
+          <span>Settings</span>
+        </a>
+      </li>
+      <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+    </ul>
+
+    <!-- 用户头像 -->
+    <div class="mt-stack-md flex items-center gap-3 px-4">
+      <img alt="User Profile" class="ai-avatar" src="https://via.placeholder.com/40" id="ai-user-avatar"/>
+    </div>
+  </div>
+</nav>

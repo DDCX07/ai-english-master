@@ -1,0 +1,17 @@
+# ===== 密钥，绝不能提交 =====
+backend/.env
+backend/*.pem
+worker/.zhipu_key
+worker/.zhipu_key_set
+.dev.vars
+
+# ===== 依赖与构建缓存 =====
+node_modules/
+.wrangler/
+
+# ===== 运行时数据（本地 SQLite，不属于代码） =====
+backend/data/
+
+# ===== 系统杂项 =====
+.DS_Store
+*.log

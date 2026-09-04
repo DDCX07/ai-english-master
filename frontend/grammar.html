@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- 深色模式防闪白：在页面渲染前同步挂载主题（勿移到 body 之后） -->
+  <script>
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('userSettings') || '{}');
+        if (s && s.darkMode) {
+          var d = document.documentElement;
+          d.classList.add('dark-mode', 'dark');
+          d.style.backgroundColor = '#111318';
+          d.style.colorScheme = 'dark';
+        }
+      } catch (e) { /* 本地存储不可用时按浅色处理 */ }
+    })();
+  </script>
+
+  <title>AI English Master - Grammar Learning</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#ffffff", "tertiary": "#784b00", "on-error": "#ffffff",
+            "primary-container": "#2563eb", "tertiary-fixed": "#ffddb8",
+            "on-surface-variant": "#434655", "primary": "#004ac6",
+            "secondary": "#006c49", "primary-fixed": "#dbe1ff",
+            "outline": "#737686", "surface-container-high": "#e6e8ea",
+            "surface-dim": "#d8dadc", "inverse-primary": "#b4c5ff",
+            "on-tertiary": "#ffffff", "surface": "#f7f9fb",
+            "on-tertiary-fixed": "#2a1700", "on-surface": "#191c1e",
+            "tertiary-container": "#996100", "surface-variant": "#e0e3e5",
+            "tertiary-fixed-dim": "#ffb95f", "on-background": "#191c1e",
+            "inverse-on-surface": "#eff1f3", "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#653e00", "surface-container": "#eceef0",
+            "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#002113",
+            "inverse-surface": "#2d3133", "error-container": "#ffdad6",
+            "background": "#f7f9fb", "on-primary-fixed": "#00174b",
+            "on-secondary": "#ffffff", "outline-variant": "#c3c6d7",
+            "on-tertiary-container": "#ffeedd", "primary-fixed-dim": "#b4c5ff",
+            "on-secondary-fixed-variant": "#005236", "on-primary-container": "#eeefff",
+            "on-secondary-container": "#00714d", "on-error-container": "#93000a",
+            "secondary-container": "#6cf8bb", "secondary-fixed": "#6ffbbe",
+            "surface-tint": "#0053db", "surface-bright": "#f7f9fb",
+            "on-primary-fixed-variant": "#003ea8", "secondary-fixed-dim": "#4edea3",
+            "error": "#ba1a1a", "surface-container-highest": "#e0e3e5"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px", "stack-lg": "32px", "stack-sm": "8px",
+            "margin-desktop": "40px", "container-max": "1280px",
+            "margin-mobile": "16px", "stack-md": "16px"
+          },
+          fontFamily: {
+            "body-md": ["Inter"], "title-md": ["Inter"], "display-lg": ["Inter"],
+            "body-lg": ["Inter"], "label-sm": ["JetBrains Mono"],
+            "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"]
+          },
+          fontSize: {
+            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- 组件样式 -->
+  <link rel="stylesheet" href="css/components.css"/>
+
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .grammar-card {
+      transition: all 0.3s ease;
+    }
+
+    .grammar-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 74, 198, 0.12);
+    }
+
+    .example-box {
+      background: linear-gradient(135deg, #f7f9fb 0%, #eceef0 100%);
+      border-left: 4px solid #004ac6;
+    }
+    html.dark-mode .example-box {
+      background: linear-gradient(135deg, #1b1f27 0%, #232833 100%);
+      border-left-color: #3b82f6;
+    }
+
+    .key-point-item {
+      position: relative;
+      padding-left: 1.5rem;
+    }
+
+    .key-point-item::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: #006c49;
+      font-weight: bold;
+    }
+
+    .mistake-item {
+      position: relative;
+      padding-left: 1.5rem;
+    }
+
+    .mistake-item::before {
+      content: '⚠';
+      position: absolute;
+      left: 0;
+      color: #784b00;
+    }
+
+    .module-btn {
+      transition: all 0.2s ease;
+    }
+
+    .module-btn.active {
+      background-color: #004ac6;
+      color: white;
+      border-color: #004ac6;
+    }
+
+    .module-btn:hover:not(.active) {
+      border-color: #004ac6;
+      color: #004ac6;
+    }
+
+    .level-badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+    }
+
+    .level-cet4 {
+      background-color: #dbe1ff;
+      color: #004ac6;
+    }
+
+    .level-cet6 {
+      background-color: #ffddb8;
+      color: #784b00;
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex">
+
+  <!-- 侧边栏导航 -->
+  <nav class="ai-sidebar bg-surface-container-lowest dark:bg-inverse-surface h-screen w-64 fixed left-0 top-0 border-r border-outline-variant dark:border-outline flex flex-col h-full py-stack-lg transition-all duration-200 ease-in-out z-50">
+    <div class="px-gutter mb-stack-lg">
+      <h1 class="font-title-md text-title-md font-bold text-primary dark:text-inverse-primary">AI English Master</h1>
+      <p class="font-label-sm text-label-sm text-outline mt-1">Grammar Learning</p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <ul class="flex flex-col gap-2 px-margin-mobile" id="ai-menu-list"></ul>
+    </div>
+
+    <div class="mt-auto px-margin-mobile pt-stack-md">
+      <button class="ai-button ai-button--primary ai-button--full" onclick="startPractice()">
+        Start Grammar Quiz
+      </button>
+      <ul class="flex flex-col gap-2 mt-stack-md">
+        <li><a class="ai-menu-item" href="setting.html" data-page="settings"><span class="material-symbols-outlined">settings</span><span>Settings</span></a></li>
+        <li><a class="ai-menu-item" href="#" id="suggestion-box-btn"><span class="material-symbols-outlined">mail</span><span>Suggestion Box</span></a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 主内容区域 -->
+  <div class="ml-64 flex-1 flex flex-col min-h-screen">
+
+    <!-- 顶部导航栏 -->
+    <header class="ai-header bg-surface/80 dark:bg-background/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant dark:border-outline flex items-center justify-between px-margin-desktop h-20">
+      <div class="flex items-center gap-stack-lg">
+        <h2 class="font-headline-lg text-headline-lg font-black text-primary dark:text-inverse-primary">
+          English Grammar
+        </h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button class="ai-icon-btn" aria-label="Search" onclick="toggleSearch()">
+          <span class="material-symbols-outlined">search</span>
+        </button>
+        <button class="ai-button ai-button--secondary" onclick="showProgress()">
+          My Progress
+        </button>
+      </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-container-max mx-auto w-full">
+
+      <!-- 搜索框（默认隐藏） -->
+      <div id="search-box" class="hidden mb-stack-lg">
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+          <input class="ai-input ai-input--search w-full" placeholder="Search grammar topics..." type="text" id="grammar-search" oninput="searchGrammar(this.value)"/>
+        </div>
+      </div>
+
+      <!-- 语法模块选择 -->
+      <section class="mb-stack-lg">
+        <h2 class="font-title-md text-title-md text-on-surface mb-stack-md">Grammar Modules</h2>
+        <div class="flex flex-wrap gap-2" id="module-buttons">
+          <button class="module-btn ai-button ai-button--text active" onclick="showModule('all')">
+            All Topics
+          </button>
+          <button class="module-btn ai-button ai-button--text" onclick="showModule('tenses')">
+            Tenses
+          </button>
+          <button class="module-btn ai-button ai-button--text" onclick="showModule('subjunctive')">
+            Subjunctive
+          </button>
+          <button class="module-btn ai-button ai-button--text" onclick="showModule('passive')">
+            Passive Voice
+          </button>
+          <button class="module-btn ai-button ai-button--text" onclick="showModule('relativeClauses')">
+            Relative Clauses
+          </button>
+          <button class="module-btn ai-button ai-button--text" onclick="showModule('conditionals')">
+            Conditionals
+          </button>
+          <button class="module-btn ai-button ai-button--text" onclick="showModule('infinitivesGerunds')">
+            -ing vs to
+          </button>
+          <button class="module-btn ai-button ai-button--text" onclick="showModule('articles')">
+            Articles
+          </button>
+          <button class="module-btn ai-button ai-button--text" onclick="showModule('prepositions')">
+            Prepositions
+          </button>
+        </div>
+      </section>
+
+      <!-- 语法卡片列表 -->
+      <section>
+        <div class="flex items-center justify-between mb-stack-md">
+          <h2 class="font-title-md text-title-md text-on-surface">Grammar Topics</h2>
+          <span class="text-label-sm text-outline" id="topic-count">24 topics</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter" id="grammar-topics">
+          <!-- 语法主题会通过JS动态生成 -->
+        </div>
+      </section>
+
+      <!-- 语法详情模态框（默认隐藏） -->
+      <div id="grammar-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-surface-container-lowest rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <!-- 模态框内容会通过JS动态生成 -->
+          <div id="modal-content"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="js/data/menu-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/utils/supabase-client.js"></script>
+  <script src="js/utils/helpers.js"></script>
+  <script src="js/utils/api.js?v=20260902"></script>
+  <script src="js/utils/auth.js"></script>
+  <script src="js/utils/suggestion.js"></script>
+  <script src="js/utils/layout.js"></script>
+  <script src="js/data/i18n-data.js?v=20260830b"></script>
+  <script src="js/data/grammar-data.js"></script>
+  <script src="js/data/grammar-practice-data.js"></script>
+
+  <script>
+    // 当前状态
+    let currentModule = 'all';
+    let currentGrammarData = null;
+
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function () {
+      currentActivePage = 'grammar';
+      renderMenu();
+      renderGrammarTopics();
+    });
+
+    // 渲染语法主题
+    function renderGrammarTopics(module = 'all') {
+      currentModule = module;
+      const container = document.getElementById('grammar-topics');
+      const buttons = document.querySelectorAll('.module-btn');
+
+      // 更新按钮状态
+      buttons.forEach(btn => btn.classList.remove('active'));
+      event?.target?.classList?.add('active');
+
+      // 收集所有语法主题
+      let allTopics = [];
+
+      if (module === 'all') {
+        // 收集所有模块的主题
+        Object.keys(grammarData).forEach(key => {
+          if (Array.isArray(grammarData[key])) {
+            grammarData[key].forEach(topic => {
+              allTopics.push({...topic, module: key});
+            });
+          }
+        });
+      } else {
+        // 只显示特定模块
+        if (grammarData[module]) {
+          grammarData[module].forEach(topic => {
+            allTopics.push({...topic, module: module});
+          });
+        }
+      }
+
+      // 更新计数
+      document.getElementById('topic-count').textContent = allTopics.length + ' topics';
+
+      // 渲染卡片
+      container.innerHTML = allTopics.map(topic => `
+        <div class="grammar-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm cursor-pointer"
+             onclick="showGrammarDetail(${JSON.stringify(topic).replace(/"/g, '&quot;')})">
+          <div class="flex items-start justify-between mb-stack-sm">
+            <div class="flex-1">
+              <h3 class="font-title-md text-title-md text-on-surface mb-1">${topic.title}</h3>
+              <p class="text-body-md text-on-surface-variant line-clamp-2">${topic.description}</p>
+            </div>
+            <span class="level-badge ${topic.level === 'CET-6' ? 'level-cet6' : 'level-cet4'}">
+              ${topic.level}
+            </span>
+          </div>
+          <div class="flex items-center gap-2 mt-stack-md">
+            <span class="material-symbols-outlined text-outline text-sm">menu_book</span>
+            <span class="text-label-sm text-outline">${topic.examples?.length || 0} examples</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 显示语法详情
+    function showGrammarDetail(topic) {
+      currentGrammarData = topic;
+      const modal = document.getElementById('grammar-modal');
+      const content = document.getElementById('modal-content');
+
+      content.innerHTML = `
+        <div class="sticky top-0 bg-surface-container-lowest border-b border-outline-variant p-6 flex items-center justify-between">
+          <div>
+            <h2 class="font-headline-lg text-headline-lg text-primary">${topic.title}</h2>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="level-badge ${topic.level === 'CET-6' ? 'level-cet6' : 'level-cet4'}">${topic.level}</span>
+              <span class="text-label-sm text-outline">${topic.module || 'Grammar'}</span>
+            </div>
+          </div>
+          <button class="ai-icon-btn" onclick="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="p-6">
+          <!-- 描述 -->
+          <div class="mb-stack-lg">
+            <h3 class="font-title-md text-title-md text-on-surface mb-stack-sm">Description</h3>
+            <p class="text-body-lg text-on-surface-variant">${topic.description}</p>
+          </div>
+
+          <!-- 例句 -->
+          <div class="mb-stack-lg">
+            <h3 class="font-title-md text-title-md text-on-surface mb-stack-md">Examples</h3>
+            <div class="space-y-sm">
+              ${topic.examples?.map(example => `
+                <div class="example-box rounded-lg p-4">
+                  <p class="text-body-md text-on-surface italic">${example}</p>
+                </div>
+              `).join('') || '<p class="text-body-md text-outline">No examples available.</p>'}
+            </div>
+          </div>
+
+          <!-- 关键点 -->
+          <div class="mb-stack-lg">
+            <h3 class="font-title-md text-title-md text-on-surface mb-stack-md">Key Points</h3>
+            <ul class="space-y-sm">
+              ${topic.keyPoints?.map(point => `
+                <li class="key-point-item text-body-md text-on-surface-variant">${point}</li>
+              `).join('') || '<li class="text-body-md text-outline">No key points available.</li>'}
+            </ul>
+          </div>
+
+          <!-- 常见错误 -->
+          <div class="mb-stack-lg">
+            <h3 class="font-title-md text-title-md text-on-surface mb-stack-md">
+              <span class="material-symbols-outlined text-tertiary align-middle mr-1">warning</span>
+              Common Mistakes
+            </h3>
+            <ul class="space-y-sm">
+              ${topic.commonMistakes?.map(mistake => `
+                <li class="mistake-item text-body-md text-on-surface-variant">${mistake}</li>
+              `).join('') || '<li class="text-body-md text-outline">No common mistakes listed.</li>'}
+            </ul>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="flex items-center gap-4 mt-stack-lg">
+            <button class="ai-button ai-button--primary" onclick="markAsLearned()">
+              <span class="material-symbols-outlined">check_circle</span>
+              <span>Mark as Learned</span>
+            </button>
+            <button class="ai-button ai-button--secondary" onclick="practiceThis()">
+              <span class="material-symbols-outlined">quiz</span>
+              <span>Practice This</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      modal.classList.remove('hidden');
+    }
+
+    // 关闭模态框
+    function closeModal() {
+      document.getElementById('grammar-modal').classList.add('hidden');
+    }
+
+    // 标记为已学习
+    function markAsLearned() {
+      if (currentGrammarData) {
+        if (api.markGrammarLearned(currentGrammarData.id)) {
+          showToast('已标记为已学习！', 'success');
+        } else {
+          showToast('已经学习过这个语法点了', 'info');
+        }
+      }
+    }
+
+    // 练习这个语法
+    function practiceThis() {
+      if (currentGrammarData) {
+        startPractice(currentGrammarData.id);
+      }
+    }
+
+    // 开始练习
+    function startPractice(grammarId = null) {
+      // 获取练习题
+      let exercises = [];
+
+      if (grammarId) {
+        // 练习特定语法点
+        exercises = getExercisesByGrammar(grammarId);
+      } else {
+        // 综合练习
+        exercises = getAllExercises();
+      }
+
+      // 随机选择10道题（如果有的话）
+      if (exercises.length > 10) {
+        exercises = shuffleArray(exercises).slice(0, 10);
+      }
+
+      if (exercises.length === 0) {
+        showToast('没有找到相关的练习题', 'error');
+        return;
+      }
+
+      // 关闭模态框（如果打开的话）
+      closeModal();
+
+      // 显示练习界面
+      showPracticeMode(exercises);
+    }
+
+    // 显示练习模式
+    function showPracticeMode(exercises) {
+      const practiceData = {
+        exercises: exercises,
+        currentIndex: 0,
+        answers: {},
+        correct: 0
+      };
+
+      // 存储当前练习数据
+      window.currentPractice = practiceData;
+
+      // 渲染练习界面
+      renderPracticeQuestion();
+    }
+
+    // 渲染练习题目
+    function renderPracticeQuestion() {
+      const practice = window.currentPractice;
+      const exercise = practice.exercises[practice.currentIndex];
+      const progress = ((practice.currentIndex + 1) / practice.exercises.length) * 100;
+
+      // 创建练习模式容器
+      let practiceContainer = document.getElementById('practice-container');
+      if (!practiceContainer) {
+        practiceContainer = document.createElement('div');
+        practiceContainer.id = 'practice-container';
+        practiceContainer.className = 'fixed inset-0 bg-background z-50 flex flex-col';
+        document.body.appendChild(practiceContainer);
+      }
+
+      practiceContainer.innerHTML = `
+        <div class="ai-header bg-surface/80 backdrop-blur-md fixed top-0 right-0 w-full z-40 border-b border-outline-variant flex items-center justify-between px-margin-desktop h-20">
+          <div class="flex items-center gap-stack-lg">
+            <button class="ai-icon-btn" onclick="exitPractice()">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+            <h2 class="font-headline-lg text-headline-lg text-primary">Grammar Practice</h2>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="text-label-sm text-outline">${practice.currentIndex + 1}/${practice.exercises.length}</span>
+            <div class="ai-progress-bar w-32">
+              <div class="ai-progress-bar__fill ai-progress-bar__fill--primary" style="width: ${progress}%"></div>
+            </div>
+          </div>
+        </div>
+
+        <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-4xl mx-auto w-full flex items-center justify-center">
+          <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 w-full" id="practice-quiz-card">
+            <div class="mb-stack-md">
+              <span class="ai-badge ai-badge--secondary">${exercise.grammarPoint || 'Grammar'}</span>
+            </div>
+
+            <div class="mb-stack-lg">
+              <p class="text-body-lg text-on-surface mb-4">${exercise.question}</p>
+            </div>
+
+            <div class="space-y-sm mb-stack-lg">
+              ${exercise.options.map((option, index) => `
+                <label class="quiz-option flex items-center gap-3 p-4 rounded-lg border border-outline-variant cursor-pointer"
+                       id="practice-option-${index}"
+                       onclick="selectPracticeAnswer(${index})">
+                  <input type="radio" name="practice-answer" value="${index}" class="ai-checkbox"/>
+                  <span class="text-body-md text-on-surface">${String.fromCharCode(65 + index)}. ${option}</span>
+                </label>
+              `).join('')}
+            </div>
+
+            <div class="flex items-center justify-between mt-stack-lg">
+              <button class="ai-button ai-button--secondary" onclick="showPracticeHint()">
+                <span class="material-symbols-outlined">lightbulb</span>
+                <span>Hint</span>
+              </button>
+              <button class="ai-button ai-button--primary" onclick="submitPracticeAnswer()">
+                <span>Submit</span>
+                <span class="material-symbols-outlined">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </main>
+      `;
+    }
+
+    // 选择练习答案
+    function selectPracticeAnswer(optionIndex) {
+      const practice = window.currentPractice;
+      practice.selectedAnswer = optionIndex;
+
+      // 更新UI
+      document.querySelectorAll('.quiz-option').forEach((opt, idx) => {
+        opt.classList.remove('selected');
+        if (idx === optionIndex) {
+          opt.classList.add('selected');
+          opt.querySelector('input').checked = true;
+        }
+      });
+    }
+
+    // 提交练习答案
+    function submitPracticeAnswer() {
+      const practice = window.currentPractice;
+      const exercise = practice.exercises[practice.currentIndex];
+
+      if (practice.selectedAnswer === undefined) {
+        showToast('请选择一个答案', 'warning');
+        return;
+      }
+
+      // 检查答案
+      const isCorrect = practice.selectedAnswer === exercise.correctAnswer;
+
+      if (isCorrect) {
+        practice.correct++;
+      }
+
+      // 记录答案
+      practice.answers[practice.currentIndex] = {
+        selected: practice.selectedAnswer,
+        correct: exercise.correctAnswer,
+        isCorrect: isCorrect
+      };
+
+      // 显示结果
+      showAnswerResult(isCorrect, exercise.explanation);
+
+      // 准备下一题
+      setTimeout(() => {
+        practice.currentIndex++;
+        practice.selectedAnswer = undefined;
+
+        if (practice.currentIndex >= practice.exercises.length) {
+          showPracticeResults();
+        } else {
+          renderPracticeQuestion();
+        }
+      }, 2000);
+    }
+
+    // 显示答案结果
+    function showAnswerResult(isCorrect, explanation) {
+      const exercise = window.currentPractice.exercises[window.currentPractice.currentIndex];
+
+      // 更新选项样式
+      document.querySelectorAll('.quiz-option').forEach((opt, idx) => {
+        opt.classList.remove('selected');
+        if (idx === exercise.correctAnswer) {
+          opt.classList.add('correct');
+        } else if (idx === window.currentPractice.selectedAnswer && !isCorrect) {
+          opt.classList.add('incorrect');
+        }
+      });
+
+      // 显示解析
+      const resultDiv = document.createElement('div');
+      resultDiv.className = 'mt-stack-lg p-4 rounded-lg ' + (isCorrect ? 'bg-secondary/10' : 'bg-error/10');
+      resultDiv.innerHTML = `
+        <p class="text-body-md ${isCorrect ? 'text-secondary' : 'text-error'}">
+          ${isCorrect ? '✓ Correct!' : '✗ Incorrect!'}
+        </p>
+        <p class="text-body-md text-on-surface-variant mt-2">${explanation}</p>
+      `;
+
+      // 只追加到练习弹层自己的题目卡片里（原来误选了页面底下的语法卡片，导致其被撑大）
+      const quizCard = document.getElementById('practice-quiz-card');
+      if (quizCard) quizCard.appendChild(resultDiv);
+    }
+
+    // 显示提示
+    function showPracticeHint() {
+      const exercise = window.currentPractice.exercises[window.currentPractice.currentIndex];
+      showToast(`Hint: ${exercise.grammarPoint}`, 'info');
+    }
+
+    // 显示练习结果
+    function showPracticeResults() {
+      const practice = window.currentPractice;
+      const percentage = Math.round((practice.correct / practice.exercises.length) * 100);
+
+      const container = document.getElementById('practice-container');
+      container.innerHTML = `
+        <div class="ai-header bg-surface/80 backdrop-blur-md fixed top-0 right-0 w-full z-40 border-b border-outline-variant flex items-center justify-between px-margin-desktop h-20">
+          <div class="flex items-center gap-stack-lg">
+            <h2 class="font-headline-lg text-headline-lg text-primary">Practice Results</h2>
+          </div>
+        </div>
+
+        <main class="flex-1 pt-24 px-margin-desktop pb-stack-lg max-w-2xl mx-auto w-full">
+          <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-8 text-center">
+            <div class="mb-stack-lg">
+              <span class="material-symbols-outlined text-[64px] ${percentage >= 70 ? 'text-secondary' : percentage >= 50 ? 'text-primary' : 'text-error'}">
+                ${percentage >= 70 ? 'emoji_events' : percentage >= 50 ? 'thumb_up' : 'school'}
+              </span>
+            </div>
+
+            <h2 class="font-headline-lg text-headline-lg text-on-surface mb-stack-md">
+              ${percentage >= 70 ? 'Great Job!' : percentage >= 50 ? 'Good Effort!' : 'Keep Practicing!'}
+            </h2>
+
+            <div class="grid grid-cols-3 gap-gutter mb-stack-lg">
+              <div class="text-center">
+                <p class="text-label-sm text-outline mb-1">Score</p>
+                <p class="font-headline-lg text-headline-lg text-primary">${percentage}%</p>
+              </div>
+              <div class="text-center">
+                <p class="text-label-sm text-outline mb-1">Correct</p>
+                <p class="font-headline-lg text-headline-lg text-secondary">${practice.correct}/${practice.exercises.length}</p>
+              </div>
+              <div class="text-center">
+                <p class="text-label-sm text-outline mb-1">Total</p>
+                <p class="font-headline-lg text-headline-lg text-tertiary">${practice.exercises.length}</p>
+              </div>
+            </div>
+
+            <div class="bg-surface-container-high rounded-lg p-4 mb-stack-lg">
+              <p class="text-body-md text-on-surface-variant">
+                ${percentage >= 70 ? 'Excellent! You have a good understanding of this grammar point.' :
+                  percentage >= 50 ? 'Good progress! Review the grammar points and practice more.' :
+                  'Keep practicing! Review the grammar rules and try again.'}
+              </p>
+            </div>
+
+            <!-- 答题记录：默认收起，点击展开查看每题详情 -->
+            <details class="text-left mb-stack-lg bg-surface-container-high rounded-lg overflow-hidden">
+              <summary class="cursor-pointer select-none px-4 py-3 flex items-center justify-between list-none">
+                <span class="text-body-md text-on-surface font-semibold">
+                  答题记录（${practice.correct}/${practice.exercises.length} 题正确，点击展开）
+                </span>
+                <span class="material-symbols-outlined text-outline">expand_more</span>
+              </summary>
+              <div class="px-4 pb-4 flex flex-col gap-3">
+                ${practice.exercises.map((ex, i) => {
+                  const a = practice.answers[i] || {};
+                  const ok = !!a.isCorrect;
+                  const yourAnswer = (a.selected !== undefined && a.selected !== null)
+                    ? `${String.fromCharCode(65 + a.selected)}. ${ex.options[a.selected]}`
+                    : '未作答';
+                  return `
+                  <div class="p-3 rounded-lg ${ok ? 'bg-secondary/10' : 'bg-error/10'}">
+                    <p class="text-body-md ${ok ? 'text-secondary' : 'text-error'}">
+                      ${ok ? '✓' : '✗'} 第 ${i + 1} 题：${ex.question}
+                    </p>
+                    <p class="text-body-md text-on-surface-variant mt-1">
+                      你的答案：${yourAnswer}<br/>
+                      正确答案：${String.fromCharCode(65 + a.correct)}. ${ex.options[a.correct]}
+                    </p>
+                    ${ex.explanation ? `<p class="text-body-md text-outline mt-1">解析：${ex.explanation}</p>` : ''}
+                  </div>`;
+                }).join('')}
+              </div>
+            </details>
+
+            <div class="flex gap-4 justify-center">
+              <button class="ai-button ai-button--secondary" onclick="exitPractice()">
+                <span class="material-symbols-outlined">close</span>
+                <span>Exit</span>
+              </button>
+              <button class="ai-button ai-button--primary" onclick="startPractice()">
+                <span class="material-symbols-outlined">refresh</span>
+                <span>Try Again</span>
+              </button>
+            </div>
+          </div>
+        </main>
+      `;
+
+      // 保存练习结果（api 内部只保留最近 10 次）
+      api.addRecord('grammar', {
+        date: new Date().toISOString(),
+        score: percentage,
+        correct: practice.correct,
+        total: practice.exercises.length
+      });
+    }
+
+    // 退出练习
+    function exitPractice() {
+      const container = document.getElementById('practice-container');
+      if (container) {
+        container.remove();
+      }
+      window.currentPractice = null;
+    }
+
+    // 显示进度
+    function showProgress() {
+      const learned = api.getLearnedGrammar();
+      const totalTopics = 24; // 总语法主题数
+      const percentage = Math.round((learned.length / totalTopics) * 100);
+      showToast(`已完成 ${learned.length}/${totalTopics} 个语法点 (${percentage}%)`, 'info');
+    }
+
+    // 切换搜索框
+    function toggleSearch() {
+      const searchBox = document.getElementById('search-box');
+      searchBox.classList.toggle('hidden');
+      if (!searchBox.classList.contains('hidden')) {
+        document.getElementById('grammar-search').focus();
+      }
+    }
+
+    // 搜索语法
+    function searchGrammar(query) {
+      if (!query) {
+        renderGrammarTopics(currentModule);
+        return;
+      }
+
+      query = query.toLowerCase();
+      const container = document.getElementById('grammar-topics');
+      let allTopics = [];
+
+      Object.keys(grammarData).forEach(key => {
+        if (Array.isArray(grammarData[key])) {
+          grammarData[key].forEach(topic => {
+            allTopics.push({...topic, module: key});
+          });
+        }
+      });
+
+      const filtered = allTopics.filter(topic =>
+        topic.title.toLowerCase().includes(query) ||
+        topic.description.toLowerCase().includes(query) ||
+        (topic.keyPoints && topic.keyPoints.some(point => point.toLowerCase().includes(query)))
+      );
+
+      document.getElementById('topic-count').textContent = filtered.length + ' topics';
+
+      container.innerHTML = filtered.map(topic => `
+        <div class="grammar-card bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm cursor-pointer"
+             onclick='showGrammarDetail(${JSON.stringify(topic).replace(/'/g, "&#39;")})'>
+          <div class="flex items-start justify-between mb-stack-sm">
+            <div class="flex-1">
+              <h3 class="font-title-md text-title-md text-on-surface mb-1">${topic.title}</h3>
+              <p class="text-body-md text-on-surface-variant line-clamp-2">${topic.description}</p>
+            </div>
+            <span class="level-badge ${topic.level === 'CET-6' ? 'level-cet6' : 'level-cet4'}">
+              ${topic.level}
+            </span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 显示特定模块
+    function showModule(module) {
+      renderGrammarTopics(module);
+    }
+
+    // 点击模态框外部关闭
+    document.getElementById('grammar-modal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
+    });
+  </script>
+
+</body>
+</html>

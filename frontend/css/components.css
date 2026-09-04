@@ -1,0 +1,781 @@
+/*
+ * AI English Master - 组件样式库
+ * Component Styles Library
+ */
+
+/* ============================
+   1. 按钮样式 (Buttons)
+   ============================ */
+.ai-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.ai-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 主按钮 */
+.ai-button--primary {
+  background-color: var(--ai-primary, #004ac6);
+  color: white;
+}
+
+.ai-button--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 74, 198, 0.3);
+}
+
+.ai-button--primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* 次要按钮 */
+.ai-button--secondary {
+  background-color: var(--ai-surface-container, #eceef0);
+  color: var(--ai-primary, #004ac6);
+}
+
+.ai-button--secondary:hover:not(:disabled) {
+  background-color: var(--ai-primary-fixed, #dbe1ff);
+}
+
+/* 文字按钮 */
+.ai-button--text {
+  background: transparent;
+  color: var(--ai-primary, #004ac6);
+  padding: 0.5rem 1rem;
+}
+
+.ai-button--text:hover:not(:disabled) {
+  background-color: rgba(0, 74, 198, 0.1);
+}
+
+/* 危险按钮 */
+.ai-button--danger {
+  background-color: var(--ai-error, #ba1a1a);
+  color: white;
+}
+
+/* 成功按钮 */
+.ai-button--success {
+  background-color: var(--ai-secondary, #006c49);
+  color: white;
+}
+
+/* 全宽按钮 */
+.ai-button--full {
+  width: 100%;
+}
+
+/* 按钮图标 */
+.ai-button__icon {
+  font-size: 1.25rem;
+}
+
+/* 图标按钮 */
+.ai-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--ai-on-surface-variant, #434655);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ai-icon-btn:hover {
+  color: var(--ai-primary, #004ac6);
+  background-color: rgba(0, 74, 198, 0.1);
+}
+
+/* ============================
+   2. 卡片样式 (Cards)
+   ============================ */
+.ai-card {
+  background-color: var(--ai-surface-container-lowest, #ffffff);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  border: 1px solid var(--ai-outline-variant, #c3c6d7);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.ai-card:hover {
+  border-color: var(--ai-primary, #004ac6);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+}
+
+/* 统计卡片 */
+.ai-stat-card {
+  background: linear-gradient(135deg, var(--ai-surface-container-lowest, #ffffff) 0%, rgba(37, 99, 235, 0.02) 100%);
+}
+
+.ai-stat-card .ai-stat-icon {
+  font-size: 1.5rem;
+}
+
+.ai-stat-card .ai-stat-value {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+/* 功能模块卡片 */
+.ai-module-card {
+  cursor: pointer;
+}
+
+.ai-module-card:hover .ai-module-icon {
+  transform: scale(1.1);
+}
+
+.ai-module-card:hover .ai-module-title {
+  color: var(--ai-primary, #004ac6);
+}
+
+/* 任务卡片 */
+.ai-task-item {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.ai-task-item:hover {
+  background-color: var(--ai-surface-container-high, #e6e8ea);
+}
+
+/* ============================
+   3. 输入框样式 (Inputs)
+   ============================ */
+.ai-input {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--ai-outline-variant, #c3c6d7);
+  background-color: var(--ai-surface-container-lowest, #ffffff);
+  color: var(--ai-on-surface, #191c1e);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.ai-input:focus {
+  border-color: var(--ai-primary, #004ac6);
+  box-shadow: 0 0 0 4px rgba(0, 74, 198, 0.1);
+}
+
+/* 双类选择器提升特异度：覆盖 Tailwind forms 插件的 input[type='text'] 重置，
+   否则 padding-left 失效会导致 placeholder 与放大镜图标重叠 */
+.ai-input.ai-input--search {
+  width: 16rem;
+  padding-left: 2.5rem;
+}
+
+.ai-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* ============================
+   4. 复选框和单选框 (Checkboxes & Radio)
+   ============================ */
+.ai-checkbox,
+.ai-radio {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--ai-outline, #737686);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  position: relative;
+}
+
+.ai-checkbox:checked,
+.ai-radio:checked {
+  background-color: var(--ai-primary, #004ac6);
+  border-color: var(--ai-primary, #004ac6);
+}
+
+.ai-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  color: white;
+  font-size: 0.875rem;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ai-radio {
+  border-radius: 50%;
+}
+
+/* ============================
+   5. 进度条 (Progress Bars)
+   ============================ */
+.ai-progress-bar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: var(--ai-surface-container-high, #e6e8ea);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.ai-progress-bar__fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.ai-progress-bar__fill--primary {
+  background-color: var(--ai-primary, #004ac6);
+}
+
+.ai-progress-bar__fill--secondary {
+  background-color: var(--ai-secondary, #006c49);
+}
+
+.ai-progress-bar__fill--tertiary {
+  background-color: var(--ai-tertiary-fixed-dim, #ffb95f);
+}
+
+/* ============================
+   6. 头像 (Avatars)
+   ============================ */
+.ai-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--ai-outline-variant, #c3c6d7);
+  object-fit: cover;
+}
+
+.ai-avatar--sm {
+  width: 2rem;
+  height: 2rem;
+}
+
+.ai-avatar--lg {
+  width: 4rem;
+  height: 4rem;
+}
+
+/* ============================
+   7. 徽章和标签 (Badges & Tags)
+   ============================ */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ai-badge--primary {
+  background-color: var(--ai-primary, #004ac6);
+  color: white;
+}
+
+.ai-badge--secondary {
+  background-color: var(--ai-secondary, #006c49);
+  color: white;
+}
+
+.ai-badge--success {
+  background-color: #10b981;
+  color: white;
+}
+
+.ai-badge--warning {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.ai-badge--error {
+  background-color: var(--ai-error, #ba1a1a);
+  color: white;
+}
+
+/* ============================
+   8. 导航菜单 (Navigation Menu)
+   ============================ */
+.ai-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  color: var(--ai-on-surface-variant, #434655);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.ai-menu-item:hover {
+  background-color: var(--ai-surface-container-high, #e6e8ea);
+  color: var(--ai-primary, #004ac6);
+}
+
+.ai-menu-item--active {
+  color: var(--ai-primary, #004ac6);
+  background-color: rgba(0, 74, 198, 0.1);
+  font-weight: 600;
+  border-right: 4px solid var(--ai-primary, #004ac6);
+}
+
+/* 侧边栏底部 Settings / Help 入口：带蓝色阴影的悬停与按压反馈 */
+nav.ai-sidebar .mt-auto .ai-menu-item {
+  cursor: pointer;
+}
+
+nav.ai-sidebar .mt-auto .ai-menu-item:hover {
+  background-color: rgba(0, 74, 198, 0.08);
+  color: var(--ai-primary, #004ac6);
+  box-shadow: 0 2px 8px rgba(0, 74, 198, 0.25);
+}
+
+nav.ai-sidebar .mt-auto .ai-menu-item:active {
+  background-color: rgba(0, 74, 198, 0.15);
+  transform: scale(0.97);
+  box-shadow: 0 1px 4px rgba(0, 74, 198, 0.35);
+}
+
+.ai-nav-item {
+  color: var(--ai-on-surface-variant, #434655);
+  text-decoration: none;
+  padding-bottom: 0.25rem;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.ai-nav-item:hover {
+  color: var(--ai-primary, #004ac6);
+}
+
+.ai-nav-item--active {
+  color: var(--ai-primary, #004ac6);
+  border-bottom-color: var(--ai-primary, #004ac6);
+}
+
+/* ============================
+   9. 侧边栏 (Sidebar)
+   ============================ */
+.ai-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 16rem;
+  height: 100vh;
+  z-index: 50;
+}
+
+/* ============================
+   10. 顶部栏 (Header)
+   ============================ */
+.ai-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: calc(100% - 16rem);
+  z-index: 40;
+}
+
+/* ============================
+   11. 响应式工具类
+   ============================ */
+@media (max-width: 768px) {
+  .ai-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .ai-sidebar--open {
+    transform: translateX(0);
+  }
+
+  .ai-header {
+    width: 100%;
+  }
+
+  .ai-input.ai-input--search {
+    width: 100%;
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+/* ============================
+   12. 工具类 (Utility Classes)
+   ============================ */
+.ai-text-center { text-align: center; }
+.ai-text-left { text-align: left; }
+.ai-text-right { text-align: right; }
+
+.ai-mt-sm { margin-top: 0.5rem; }
+.ai-mt-md { margin-top: 1rem; }
+.ai-mt-lg { margin-top: 1.5rem; }
+.ai-mb-sm { margin-bottom: 0.5rem; }
+.ai-mb-md { margin-bottom: 1rem; }
+.ai-mb-lg { margin-bottom: 1.5rem; }
+
+.ai-flex { display: flex; }
+.ai-flex-col { flex-direction: column; }
+.ai-items-center { align-items: center; }
+.ai-justify-between { justify-content: space-between; }
+.ai-gap-sm { gap: 0.5rem; }
+.ai-gap-md { gap: 1rem; }
+.ai-gap-lg { gap: 1.5rem; }
+
+.ai-hidden { display: none; }
+
+/* ============ 移动端抽屉侧边栏（配合 js/utils/layout.js） ============ */
+
+/* 汉堡按钮：桌面隐藏，手机显示 */
+.ai-hamburger {
+  display: none;
+}
+
+/* 遮罩：默认由 .hidden 控制显隐，这里只定义铺满和层级 */
+.ai-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 45; /* 高于顶栏(40)，低于侧边栏(50) */
+}
+
+@media (max-width: 767px) {
+  .ai-hamburger {
+    display: inline-flex;
+  }
+
+  /* 侧边栏变为可滑出抽屉 */
+  .ai-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .ai-sidebar.ai-sidebar--open {
+    transform: translateX(0);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.25);
+  }
+
+  /* 主内容区和顶栏变为全宽 */
+  .ml-64 {
+    margin-left: 0 !important;
+  }
+
+  header.ai-header {
+    width: 100% !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  main.px-margin-desktop {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+/* ============================
+   15. 夜间模式（html.dark-mode，设置页开关 / layout.js 全站应用）
+   两层实现：
+   a) 覆盖 --ai-* 变量 → 组件库（按钮/卡片/输入框/菜单/弹窗等）整体换深色
+   b) 覆盖页面里用到的 Tailwind 颜色工具类 → 主内容区背景/文字/边框
+   ============================ */
+
+/* ---- a) 组件变量覆盖（比浅色值更高的对比度） ---- */
+html.dark-mode {
+  --ai-primary: #6f9eff;             /* 深色下主色提亮，保证可读 */
+  --ai-on-primary: #00296c;
+  --ai-secondary: #3fd08f;
+  --ai-tertiary: #ffb95f;
+  --ai-error: #ffb4ab;
+  --ai-on-surface: #e3e2e6;
+  --ai-on-surface-variant: #c5c6d0;
+  --ai-outline: #8f9199;
+  --ai-outline-variant: #4a4d56;
+  --ai-surface: #111318;
+  --ai-surface-variant: #44464e;
+  --ai-surface-container-lowest: #0c0e12;
+  --ai-surface-container-low: #191c21;
+  --ai-surface-container: #1d2024;
+  --ai-surface-container-high: #272a2f;
+  --ai-surface-container-highest: #32353a;
+  --ai-inverse-surface: #e3e2e6;
+  --ai-inverse-on-surface: #303338;
+}
+
+/* ---- b) Tailwind 工具类覆盖（仅覆盖页面实际用到的类） ---- */
+html.dark-mode body {
+  background-color: #111318;
+  color: #e3e2e6;
+}
+
+html.dark-mode .bg-background { background-color: #111318; }
+html.dark-mode .bg-surface { background-color: #111318; }
+html.dark-mode .bg-surface\/80 { background-color: rgba(17, 19, 24, 0.85); }
+html.dark-mode .bg-background\/80 { background-color: rgba(17, 19, 24, 0.85); }
+html.dark-mode .bg-surface-container-lowest { background-color: #0c0e12; }
+html.dark-mode .bg-surface-container-low { background-color: #191c21; }
+html.dark-mode .bg-surface-container { background-color: #1d2024; }
+html.dark-mode .bg-surface-container-high { background-color: #272a2f; }
+
+html.dark-mode .text-on-surface { color: #e3e2e6; }
+html.dark-mode .text-on-surface-variant { color: #c5c6d0; }
+html.dark-mode .text-outline { color: #969ba8; }           /* 比浅色模式 outline 提亮，小字也看得清 */
+html.dark-mode .text-primary { color: #6f9eff; }
+html.dark-mode .text-secondary { color: #3fd08f; }
+html.dark-mode .text-tertiary { color: #ffb95f; }
+html.dark-mode .text-error { color: #ffb4ab; }
+
+html.dark-mode .border-outline-variant { border-color: #4a4d56; }
+html.dark-mode .border-outline { border-color: #4a4d56; }
+
+/* 卡片阴影在深色下收敛为描边感 */
+html.dark-mode .ai-card,
+html.dark-mode .bg-surface-container-lowest {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- 侧边栏：深色下重配色，重点解决文字对比度 ---- */
+html.dark-mode nav.ai-sidebar {
+  background-color: #1b1e22;
+  border-right-color: #2c3036;
+}
+
+html.dark-mode nav.ai-sidebar h1 {
+  color: #a9c6ff;
+}
+
+html.dark-mode nav.ai-sidebar .font-label-sm {
+  color: #969ba8;
+}
+
+html.dark-mode nav.ai-sidebar .ai-menu-item {
+  color: #c9cdd4;                       /* 菜单文字：深底上高对比 */
+}
+
+html.dark-mode nav.ai-sidebar .ai-menu-item:hover {
+  color: #a9c6ff;
+  background-color: rgba(111, 158, 255, 0.15);
+}
+
+html.dark-mode nav.ai-sidebar .ai-menu-item--active {
+  color: #a9c6ff;
+  background-color: rgba(111, 158, 255, 0.2);
+  border-right-color: #8ab4ff;
+}
+
+/* 底部 Settings / Help 的蓝晕在深色下换成亮蓝 */
+html.dark-mode nav.ai-sidebar .mt-auto .ai-menu-item:hover {
+  color: #a9c6ff;
+  background-color: rgba(111, 158, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(111, 158, 255, 0.3);
+}
+
+html.dark-mode nav.ai-sidebar .mt-auto .ai-menu-item:active {
+  background-color: rgba(111, 158, 255, 0.25);
+  box-shadow: 0 1px 4px rgba(111, 158, 255, 0.4);
+}
+
+/* ---- 顶栏 ---- */
+html.dark-mode header.ai-header {
+  background-color: rgba(17, 19, 24, 0.85);
+  border-bottom-color: #2c3036;
+}
+
+/* ---- 各页面细节 ---- */
+/* 输入框深色 */
+html.dark-mode .ai-input {
+  color: #e3e2e6;
+}
+
+/* 下拉选择项（浏览器原生弹层跟随系统，这里保证选中项底色） */
+html.dark-mode select.ai-input option {
+  background-color: #1d2024;
+  color: #e3e2e6;
+}
+
+/* 阅读题选项：深底上去掉浅色叠加，改用描边强调 */
+html.dark-mode .quiz-option.selected {
+  background-color: rgba(180, 197, 255, 0.1);
+}
+
+/* 打卡徽章、提亮文字底色不变即可（rgba 半透明自适配） */
+
+/* ============================
+   16. 夜间模式修正：填充色与文字色分离
+   第 15 节把 --ai-primary 提亮为淡蓝是为了"深底上的文字/图标"可读，
+   但按钮/徽章把它当填充底色用，白字配淡蓝底会发灰发虚。
+   这里给"需要饱和填充"的元素单独指定深色下仍鲜艳的填充色。
+   ============================ */
+
+/* 主按钮：饱和蓝填充 + 白字（对比度 ≥ 4.5:1） */
+html.dark-mode .ai-button--primary {
+  background-color: #3b6fe0;
+  color: #ffffff;
+}
+
+html.dark-mode .ai-button--primary:hover:not(:disabled) {
+  background-color: #4c7dff;
+  box-shadow: 0 4px 14px rgba(76, 125, 255, 0.45);
+}
+
+/* 次要按钮：深底 + 亮蓝字，悬停不再泛白 */
+html.dark-mode .ai-button--secondary {
+  background-color: #272a2f;
+  color: #8ab4ff;
+}
+
+html.dark-mode .ai-button--secondary:hover:not(:disabled) {
+  background-color: rgba(180, 197, 255, 0.15);
+}
+
+/* 文字按钮悬停底色 */
+html.dark-mode .ai-button--text:hover:not(:disabled) {
+  background-color: rgba(111, 158, 255, 0.15);
+}
+
+/* 成功 / 危险按钮：深色下保持饱和填充 */
+html.dark-mode .ai-button--success {
+  background-color: #1f9d63;
+  color: #ffffff;
+}
+
+html.dark-mode .ai-button--danger {
+  background-color: #d64a41;
+  color: #ffffff;
+}
+
+/* 主色徽章（级别标签等）：饱和蓝填充 */
+html.dark-mode .ai-badge--primary {
+  background-color: #3b6fe0;
+  color: #ffffff;
+}
+
+html.dark-mode .ai-badge--secondary {
+  background-color: #1f9d63;
+  color: #ffffff;
+}
+
+html.dark-mode .ai-badge--error {
+  background-color: #d64a41;
+  color: #ffffff;
+}
+
+/* 勾选框 / 单选框选中态 */
+html.dark-mode .ai-checkbox:checked,
+html.dark-mode .ai-radio:checked {
+  background-color: #3b6fe0;
+  border-color: #4c7dff;
+}
+
+/* 设置页开关：打开态用饱和绿，白色滑块清晰可见 */
+html.dark-mode .settings-switch.on {
+  background-color: #1f9d63;
+}
+
+/* 输入框聚焦光环 */
+html.dark-mode .ai-input:focus {
+  border-color: #4c7dff;
+  box-shadow: 0 0 0 4px rgba(76, 125, 255, 0.18);
+}
+
+/* ============================
+   17. 夜间模式补充：防闪白基线 / 头像 / 搜索框
+   ============================ */
+
+/* 页面级基线：配合各页 head 里的防闪白脚本，CSS 加载后接管背景 */
+html.dark-mode {
+  background-color: #111318;
+  color-scheme: dark;
+}
+
+/* ---- 用户头像：背景固定品牌蓝，不随主题变色；深色下加浅色描边保证轮廓 ---- */
+html.dark-mode .ai-avatar {
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+/* ---- 输入框（含搜索栏）：双类名提升优先级，
+        压过 Tailwind forms 插件事后注入的白色 input 重置 ---- */
+html.dark-mode .ai-input.ai-input,
+html.dark-mode select.ai-input,
+html.dark-mode textarea.ai-input {
+  background-color: #191c21;
+  border-color: #4a4d56;
+  color: #e3e2e6;
+}
+
+html.dark-mode .ai-input::placeholder {
+  color: #9aa3b2;
+}
+
+/* 搜索栏放大镜图标：从灰提到亮灰蓝，与"Search..."文字同层级对比 */
+html.dark-mode header .material-symbols-outlined.text-outline {
+  color: #aeb6c6;
+}
+
+/* 下拉框弹层选项 */
+html.dark-mode select.ai-input option,
+html.dark-mode select.ai-input optgroup {
+  background-color: #1d2024;
+  color: #e3e2e6;
+}
+
+/* ============================
+   18. 登录/注册弹窗选项卡 & 未登录访客头像
+   ============================ */
+
+/* 弹窗内"登录 / 注册"选项卡 */
+.ai-auth-tab--active {
+  background-color: var(--ai-primary, #004ac6);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+.ai-auth-tab--idle {
+  background: transparent;
+  color: var(--ai-on-surface-variant, #434655);
+  border: none;
+  cursor: pointer;
+}
+
+.ai-auth-tab--idle:hover {
+  color: var(--ai-primary, #004ac6);
+  background-color: rgba(0, 74, 198, 0.06);
+}
+
+/* 未登录访客头像：蓝色渐变圆 + 白色人形图标，悬停有光环提示可点 */
+.ai-avatar--guest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #4c7dff 0%, #004ac6 100%);
+  color: #ffffff;
+  cursor: pointer;
+  border: none;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.ai-avatar--guest:hover {
+  box-shadow: 0 0 0 3px rgba(76, 125, 255, 0.3);
+  transform: scale(1.05);
+}
